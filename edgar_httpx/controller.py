@@ -22,7 +22,7 @@ def get_cache_controller(key_generator, cache_rules: dict[str, Union[bool, int]]
             if response.status not in self._cacheable_status_codes:
                 return False
 
-            if request.url.host.decode().endswith("sec.gov"):
+            if request.url.host.decode().endswith(".sec.gov"):
                 target = request.url.target.decode()
 
                 is_cacheable = match_request(target=target, cache_rules=cache_rules)
@@ -43,7 +43,7 @@ def get_cache_controller(key_generator, cache_rules: dict[str, Union[bool, int]]
 
             target = request.url.target.decode()
 
-            if request.url.host.decode().endswith("sec.gov"):
+            if request.url.host.decode().endswith(".sec.gov"):
                 cache_period = match_request(target=target, cache_rules=cache_rules)
 
                 if cache_period is True:
