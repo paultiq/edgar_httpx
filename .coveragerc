@@ -1,0 +1,22 @@
+[run]
+source = edgar_httpx
+relative_files = true
+parallel = true
+omit = 
+    tests/*
+
+[html]
+show_contexts = True
+
+[report]
+exclude_also =
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
