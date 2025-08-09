@@ -211,4 +211,3 @@ requires = ["hatchling",
   "uv-dynamic-versioning @ git+https://github.com/paultiq/uv-dynamic-versioning.git; python_version == '3.14'",
 ]
 build-backend = "hatchling.build"
-]
