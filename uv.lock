@@ -190,7 +190,6 @@ wheels = [
 
 [[package]]
 name = "edgar-httpx"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "hishel" },
