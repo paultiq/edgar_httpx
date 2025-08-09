@@ -142,8 +142,27 @@ async def test_file_async_nocache(manager_nocache: HttpClientManager):
         end = time.perf_counter()
     
     assert min(responses) == 200 and max(responses) == 200
-    assert (end-start) > 3
+    assert (end-start) > 3, "30 requests took less than 3 seconds at 10 requests per second."
 
+    # Change the rate limit and check again
+    manager_nocache.update_rate_limiter(requests_per_second=5)
+    
+
+    async with manager_nocache.async_http_client() as client:
+            
+        tasks = [client.get(url=SMALL_URL) for _ in range(10)]
+        results = await asyncio.gather(*tasks)
+        
+        start = time.perf_counter()
+
+        tasks = [client.get(url=SMALL_URL) for _ in range(10)]
+        results = await asyncio.gather(*tasks)
+        responses = [r.status_code for r in results] 
+        end = time.perf_counter()
+        
+        assert min(responses) == 200 and max(responses) == 200
+        assert (end-start) > 2 and (end-start) < 3.5
+    
 def test_short_cache_edgar_url(manager_cache: HttpClientManager):
     url = "https://www.sec.gov/files/company_tickers.json"
 

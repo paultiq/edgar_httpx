@@ -1,6 +1,6 @@
 import logging
 import threading
-from contextlib import asynccontextmanager, contextmanager, nullcontext
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator, Optional, Union
@@ -19,7 +19,7 @@ try:
     # enable http2 if h2 is installed
     import h2  # type: ignore  # noqa
 
-    http2 = True
+    http2 = True  # pragma: no cover
 except ImportError:
     http2 = False
 
@@ -102,11 +102,7 @@ class HttpClientManager:
 
     def close(self):
         if self._client is not None:
-            try:
-                self._client.close()
-            except Exception:
-                logger.exception("Exception closing client")
-
+            self._client.close()
             self._client = None
 
     def update_rate_limiter(self, requests_per_second: int, max_delay: Duration = Duration.DAY):
@@ -132,7 +128,8 @@ class HttpClientManager:
         """
 
         if client is not None:
-            yield nullcontext(client)  # type: ignore # Caller is responsible for closing
+            yield client  # type: ignore # Caller is responsible for closing
+            return
 
         async with self.edgar_client_factory_async(**kwargs) as client:
             yield client

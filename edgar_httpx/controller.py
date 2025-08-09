@@ -38,7 +38,9 @@ def get_cache_controller(key_generator, cache_rules: dict[str, Union[bool, int]]
         def construct_response_from_cache(
             self, request: httpcore.Request, response: httpcore.Response, original_request: httpcore.Request
         ) -> Union[httpcore.Request, httpcore.Response, None]:
-            if response.status not in self._cacheable_status_codes:
+            if (
+                response.status not in self._cacheable_status_codes
+            ):  # pragma: no cover - would only occur if the cache was loaded then rules changed
                 return None
 
             target = request.url.target.decode()
@@ -50,8 +52,9 @@ def get_cache_controller(key_generator, cache_rules: dict[str, Union[bool, int]]
                     # Cache forever, never recheck
                     logger.debug("Cache hit for %s", target)
                     return response
-                elif cache_period is False:
-                    # Do not cache
+                elif (
+                    cache_period is False or cache_period is None
+                ):  # pragma: no cover - would only occur if the cache was loaded then rules changed
                     return None
                 else:
                     max_age = cache_period
