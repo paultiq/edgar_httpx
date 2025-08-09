@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        job_name: Test
         python-version: ["3.9"] # , "3.13", "3.14", "3.14t"
     environment: test
     permissions:
