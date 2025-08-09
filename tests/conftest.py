@@ -28,13 +28,3 @@ def manager_nocache(tmp_path_factory, request):
 
     mgr = HttpClientManager(user_agent=user_agent, cache_enabled=False, cache_dir=None)
     return mgr
-
-@pytest.fixture
-def unique_cache_dir(tmp_path_factory, request):
-    """
-    Creates a unique cache directory for each test
-    based on its nodeid (path + test name).
-    """
-    safe_name = request.node.nodeid.replace("::", "__").replace("/", "_")
-    cache_dir = tmp_path_factory.mktemp(safe_name)
-    return cache_dir

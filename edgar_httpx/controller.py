@@ -15,9 +15,6 @@ def match_request(target, cache_rules: dict[str, Union[bool, int]]):
 
             return v
 
-    logger.info("%s didn't match any rules")
-    return False
-
 
 def get_cache_controller(key_generator, cache_rules: dict[str, Union[bool, int]], **kwargs):
     class EdgarController(hishel.Controller):
@@ -42,7 +39,7 @@ def get_cache_controller(key_generator, cache_rules: dict[str, Union[bool, int]]
             self, request: httpcore.Request, response: httpcore.Response, original_request: httpcore.Request
         ) -> Union[httpcore.Request, httpcore.Response, None]:
             if response.status not in self._cacheable_status_codes:
-                return False
+                return None
 
             target = request.url.target.decode()
 

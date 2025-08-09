@@ -32,7 +32,7 @@ class RateLimitingTransport(httpx.HTTPTransport):
         # using a constant string for item name means that the same
         # rate is applied to all requests.
         while not self.limiter.try_acquire(__name__):
-            logger.debug("Lock acquisition timed out, retrying")
+            logger.debug("Lock acquisition timed out, retrying")  # pragma: no cover
 
         logger.debug("Acquired lock")
         return super().handle_request(request, **kwargs)
@@ -45,7 +45,7 @@ class AsyncRateLimitingTransport(httpx.AsyncHTTPTransport):
 
     async def handle_async_request(self, request: httpx.Request, **kwargs) -> httpx.Response:
         while not await self.limiter.try_acquire_async(__name__):
-            logger.debug("Lock acquisition timed out, retrying")
+            logger.debug("Lock acquisition timed out, retrying")  # pragma: no cover
 
         logger.debug("Acquired lock")
         response = await super().handle_async_request(request, **kwargs)

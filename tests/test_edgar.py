@@ -47,6 +47,35 @@ def test_file_sync(manager_cache: HttpClientManager):
     assert min(responses) == 200 and max(responses) == 200
     assert (end-start) < 1
 
+def test_file_sync_nocache(manager_nocache: HttpClientManager):
+    """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
+
+
+    with manager_nocache.client() as client:
+        response = client.get(url=SMALL_URL)
+
+        first_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    time.sleep(2)
+    with manager_nocache.client() as client:
+        response = client.get(url=SMALL_URL)
+
+        second_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    assert first_date < second_date
+
+    # Make 30 requests, they should complete in under a second because caching magic
+    
+    with manager_nocache.client() as client:
+        start = time.perf_counter()
+        responses = [client.get(url=SMALL_URL).status_code for _ in range(30)]
+        end = time.perf_counter()
+    
+    assert min(responses) == 200 and max(responses) == 200
+    assert (end-start) > 3
+
 @pytest.mark.asyncio
 async def test_file_async(manager_cache: HttpClientManager):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
@@ -115,3 +144,59 @@ async def test_file_async_nocache(manager_nocache: HttpClientManager):
     assert min(responses) == 200 and max(responses) == 200
     assert (end-start) > 3
 
+def test_short_cache_edgar_url(manager_cache: HttpClientManager):
+    url = "https://www.sec.gov/files/company_tickers.json"
+
+    with manager_cache.client() as client:
+        response = client.get(url=url)
+
+        first_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    time.sleep(1)
+    with manager_cache.client() as client:
+        response = client.get(url=url)
+
+        second_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    # Not cached
+    assert first_date == second_date
+
+def test_non_edgar_url(manager_cache: HttpClientManager):
+    """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
+
+    url = "https://httpbin.org/get"
+    with manager_cache.client() as client:
+        response = client.get(url=url)
+
+        first_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    time.sleep(1)
+    with manager_cache.client() as client:
+        response = client.get(url=url)
+
+        second_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    # Not cached
+    assert first_date < second_date
+
+
+def test_close(manager_cache: HttpClientManager):
+
+    url = "https://httpbin.org/get"
+    with manager_cache.client() as client:
+        response = client.get(url=url)
+
+        first_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
+
+    manager_cache.close()
+
+    with manager_cache.client() as client:
+        response = client.get(url=url)
+
+        first_date = response.headers["date"]
+        assert response.status_code == 200, response.status_code
