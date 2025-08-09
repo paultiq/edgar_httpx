@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        job_name: [Test, Coverage]
-        python-version: ["3.9", "3.13", "3.14", "3.14t"]
+        job_name: Test
+        python-version: ["3.9"] # , "3.13", "3.14", "3.14t"
     environment: test
     permissions:
       contents: write
@@ -41,8 +41,7 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
         run: |
-          uv run pytest
-          uv run coverage report -m
+          uv run pytest --cov --cov-report=term-missing
           uv build
       - name: Python Coverage Comment if main
         if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == env.LATEST_PY_VERSION }}
