@@ -1,6 +1,6 @@
 HTTPX Transports configured for Edgar SEC
 
-[![PyPI Version](https://badge.fury.io/py/edgar_httpx.svg)](https://pypi.python.org/pypi/edgar_httpx)
+[![PyPI Version](https://badge.fury.io/py/edgar-httpx.svg)](https://pypi.python.org/pypi/edgar-httpx)
 
 [![BuildRelease](https://github.com/paultiq/edgar_httpx/actions/workflows/build_deploy.yml/badge.svg)](https://github.com/paultiq/edgar_httpx/actions/workflows/build_deploy.yml)
 [![Tests](https://github.com/paultiq/edgar_httpx/actions/workflows/test.yml/badge.svg)](https://github.com/paultiq/edgar_httpx/actions/workflows/test.yml)
