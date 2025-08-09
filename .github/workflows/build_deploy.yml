@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+env:
+  EDGAR_IDENTITY: "Iq De de_iq@iqmo.com"
+
 # Builds on tag
 jobs:
   build-and-upload:

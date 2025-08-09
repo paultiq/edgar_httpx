@@ -35,7 +35,7 @@ repos:
         language: system
         types: [python]
         require_serial: true
-        always_run: true
+        always_run: false
         pass_filenames: true
         args:
           [
