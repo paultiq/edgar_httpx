@@ -15,7 +15,7 @@ dev = [
 
 [project]
 name = "edgar_httpx"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Rate Limiting and Caching HTTPX Client for SEC Edgar Requests"
 authors = [{name = "Paul T", email = "paul@iqmo.com"}]
 readme = "README.md"
