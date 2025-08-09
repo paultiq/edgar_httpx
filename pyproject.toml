@@ -176,14 +176,7 @@ reportGeneralTypeIssues = false
 reportPrivateImportUsage = false
 reportAttributeAccessIssue = false
 exclude = ["tests/**"]
-venvPath = "/git/iqmo"
-venv = "/git/iqmo/.venv"
 
-[tool.pytest.ini_options]
-markers = [
-  "bqnt: Tests that require BQNT environment",
-  "blpapi: Tests that require BLPAPI/Terminal session"
-]
 
 [tool.ruff]
 line-length = 120
@@ -218,3 +211,4 @@ requires = ["hatchling",
   "uv-dynamic-versioning @ git+https://github.com/paultiq/uv-dynamic-versioning.git; python_version == '3.14'",
 ]
 build-backend = "hatchling.build"
+]
