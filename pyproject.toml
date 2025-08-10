@@ -1,19 +1,8 @@
 
-[dependency-groups]
-dev = [
-  "pre-commit>=4.2.0",
-  "pylint>=3.3.8",
-  "pytest>=8.4.1",
-  "pytest-asyncio>=1.1.0",
-  "pytest-cov>=6.2.1",
-  "pytest-xdist>=3.8.0",
-  "ruff>=0.12.8",
-]
-
 [project]
-name = "edgar_httpx"
+name = "httpxthrottlecache"
 dynamic = ["version"]
-description = "Rate Limiting and Caching HTTPX Client for SEC Edgar Requests"
+description = "Rate Limiting and Caching HTTPX Client"
 authors = [{name = "Paul T", email = "paul@iqmo.com"}]
 readme = "README.md"
 requires-python = ">=3.09"
@@ -37,20 +26,30 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 
+[dependency-groups]
+dev = [
+  "pre-commit>=4.2.0",
+  "pylint>=3.3.8",
+  "pytest>=8.4.1",
+  "pytest-asyncio>=1.1.0",
+  "pytest-cov>=6.2.1",
+  "pytest-xdist>=3.8.0",
+  "ruff>=0.12.8",
+]
 
 [project.urls]
-Homepage = "https://github.com/paultiq/edgar-httpx"
-Repository = "https://github.com/paultiq/edgar-httpx"
-Issues = "https://github.com/paultiq/edgar-httpx/issues"
+Homepage = "https://github.com/paultiq/httpxthrottlecache"
+Repository = "https://github.com/paultiq/httpxthrottlecache"
+Issues = "https://github.com/paultiq/httpxthrottlecache/issues"
 
 [tool.hatch.build.targets.sdist]
-include = ["edgar_httpx"]
+include = ["httpxthrottlecache"]
 
 [tool.hatch.build.targets.wheel]
-include = ["edgar_httpx"]
+include = ["httpxthrottlecache"]
 
 [tool.hatch.build.targets.wheel.sources]
-"./edgar_httpx" = "edgar_httpx"
+"./httpxthrottlecache" = "httpxthrottlecache"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"

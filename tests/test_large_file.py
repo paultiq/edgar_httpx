@@ -1,9 +1,9 @@
-from edgar_httpx import HttpClientManager
+from httpxthrottlecache import HttpxThrottleCache
 import time
 
 LARGE_FILE_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip"
  
-def test_large_file(manager_cache: HttpClientManager):
+def test_large_file(manager_cache: HttpxThrottleCache):
     with manager_cache.client() as client:
         start = time.perf_counter()
         response = client.get(LARGE_FILE_URL)
