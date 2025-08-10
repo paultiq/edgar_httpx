@@ -1,6 +1,7 @@
 HTTPX Wrapper with Rate Limiting and Caching Transports.
 
 [![PyPI Version](https://badge.fury.io/py/httpxthrottlecache.svg)](https://pypi.python.org/pypi/httpxthrottlecache)
+![Python Versions](https://img.shields.io/pypi/pyversions/httpxthrottlecache)
 
 [![BuildRelease](https://github.com/paultiq/httpxthrottlecache/actions/workflows/build_deploy.yml/badge.svg)](https://github.com/paultiq/httpxthrottlecache/actions/workflows/build_deploy.yml)
 [![Tests](https://github.com/paultiq/httpxthrottlecache/actions/workflows/test.yml/badge.svg)](https://github.com/paultiq/httpxthrottlecache/actions/workflows/test.yml)
