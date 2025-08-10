@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator, Generator, Optional, Union
 
 import hishel
 import httpx
-from pyrate_limiter import Duration
+from pyrate_limiter import Duration, Limiter
 
 from .controller import get_cache_controller
 from .key_generator import edgarfile_key_generator
@@ -50,6 +50,7 @@ class HttpClientManager:
         max_delay: Duration = Duration.DAY,
         cache_enabled: bool = True,
         cache_dir: Optional[str] = None,
+        rate_limiter: Optional[Limiter] = None,
     ):
         self.lock = threading.Lock()
 
@@ -72,7 +73,10 @@ class HttpClientManager:
             "/Archives/edgar/data": True,  # cache forever
         }
 
-        self.rate_limiter = create_rate_limiter(requests_per_second=request_per_sec_limit, max_delay=max_delay)
+        if rate_limiter is None:
+            self.rate_limiter = create_rate_limiter(requests_per_second=request_per_sec_limit, max_delay=max_delay)
+        else:
+            self.rate_limiter = rate_limiter
 
         self.cache_enabled = cache_enabled
 

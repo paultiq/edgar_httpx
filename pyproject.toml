@@ -59,7 +59,7 @@ source = "uv-dynamic-versioning"
 extension-pkg-allow-list = "pyarrow.lib"
 
 [tool.pylint.messages_control]
-disable = ["C1805", "I0011", "I0020", "R0401", "R0801", "R0902", "R0903", "all"]
+disable = ["C1805", "I0011", "I0020", "R0401", "R0801", "R0902", "R0903", "E0611", "all"]
 enable = [
   "C0104", # https://pylint.readthedocs.io/en/stable/user_guide/messages/convention/disallowed-name.html
   "C0117", # https://pylint.readthedocs.io/en/stable/user_guide/messages/convention/unnecessary-negation.html
@@ -91,7 +91,6 @@ enable = [
   "E0312", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/invalid-getnewargs-returned.html
   "E0313", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/invalid-getnewargs-ex-returned.html
   "E0606", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/possibly-used-before-assignment.html
-  "E0611", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/no-name-in-module.html
   "E0701", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/bad-except-order.html
   "E1144", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/invalid-slice-step.html
   "E1200", # https://pylint.readthedocs.io/en/stable/user_guide/messages/error/logging-unsupported-format.html
