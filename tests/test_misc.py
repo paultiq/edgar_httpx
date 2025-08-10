@@ -119,3 +119,60 @@ async def test_mkdir():
 
         assert response.status_code == 200, response.status_code 
 
+
+@pytest.mark.asyncio
+async def test_override_cache_rule(manager_cache):
+    url = "https://httpbin.org/cache/60"
+
+    dir = manager_cache.cache_dir
+
+    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=True, cache_dir=dir / "foo")
+
+    mgr.cache_rules["httpbin.org"] = {
+        ".*cache.*": 0
+    }
+    async with mgr.async_http_client() as client:
+        response1 = await client.get(url=url)
+
+        assert response1.status_code == 200, response1.status_code 
+
+        await asyncio.sleep(2)
+        response2 = await client.get(url=url)
+
+        assert response2.status_code == 200, response2.status_code 
+
+        assert response1.headers["date"] < response2.headers["date"]
+
+    
+    # False means: Don't cache
+    mgr.cache_rules["httpbin.org"] = {
+        ".*cache.*": False
+    }
+    async with mgr.async_http_client() as client:
+        response1 = await client.get(url=url)
+
+        assert response1.status_code == 200, response1.status_code 
+
+        await asyncio.sleep(2)
+        response2 = await client.get(url=url)
+
+        assert response2.status_code == 200, response2.status_code 
+
+        assert response1.headers["date"] < response2.headers["date"]
+
+    # With None, it'll cache
+    mgr.cache_rules["httpbin.org"] = {
+        ".*cache.*": None
+    }
+
+    async with mgr.async_http_client() as client:
+        response1 = await client.get(url=url)
+
+        assert response1.status_code == 200, response1.status_code 
+
+        await asyncio.sleep(2)
+        response2 = await client.get(url=url)
+
+        assert response2.status_code == 200, response2.status_code 
+
+        assert response1.headers["date"] == response2.headers["date"]

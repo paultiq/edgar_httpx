@@ -31,6 +31,10 @@ This project builds on [Hishel](https://hishel.com/) to provide:
     duration is int | bool:
     - int: # of seconds to treat the file as unchanged: the file will not be revalidated during this period
     - true: infinite caching - never re-validate
-    -  
-- Rate Limiting supporting local rate limits, multiprocessing rate limiting, and distributed rate limiting. 
+- A cache_dir must be passed to the HttpxThrottleCache(cache_dir=) initializer if caching is to be used. 
 
+# Rate Limiting
+
+Rate limiting is implemented via [pyrate_limiter](https://pyratelimiter.readthedocs.io/en/latest/). This is a leaky bucket implementation that allows a configurable number of requests per time interval. 
+
+pyrate_limiter supports a variable of backends. The default backend is in-memory, and a single Limiter can be used for both sync and asyncio requests, across multiple threads. Alternative limiters can be used for multiprocess and distributed rate limiting, see [examples](https://github.com/vutran1710/PyrateLimiter/tree/master/examples) for more. 
