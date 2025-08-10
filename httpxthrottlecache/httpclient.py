@@ -41,7 +41,7 @@ class HttpxThrottleCache:
     cache_enabled: bool
     httpx_params: dict[str, Any]
 
-    cache_rules: dict[str, dict[str, Union[bool, int]]]
+    _cache_rules: dict[str, dict[str, Union[bool, int]]]
     _client: Optional[httpx.Client] = None
 
     def __init__(
@@ -69,9 +69,9 @@ class HttpxThrottleCache:
             self.httpx_params["headers"]["User-Agent"] = user_agent
 
         if cache_rules is not None:
-            self.cache_rules = cache_rules
+            self._cache_rules = cache_rules
         else:
-            self.cache_rules = {}
+            self._cache_rules = {}
 
         if rate_limiter is None:
             self.rate_limiter = create_rate_limiter(requests_per_second=request_per_sec_limit, max_delay=max_delay)
@@ -81,7 +81,7 @@ class HttpxThrottleCache:
         self.cache_enabled = cache_enabled
 
         if cache_enabled:
-            if not self.cache_rules:
+            if not self._cache_rules:
                 logger.info("Cache is enabled, but no cache_rules provided. Will use default caching.")
 
             if cache_dir is None:
@@ -145,7 +145,7 @@ class HttpxThrottleCache:
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
             storage = hishel.FileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
-            controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self.cache_rules)
+            controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self._cache_rules)
             rate_limit_transport = RateLimitingTransport(self.rate_limiter)
             return hishel.CacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
@@ -156,7 +156,7 @@ class HttpxThrottleCache:
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
             storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
-            controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self.cache_rules)
+            controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self._cache_rules)
             rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter)
             return hishel.AsyncCacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:

@@ -1,6 +1,7 @@
 HTTPX Wrapper with Rate Limiting and Caching Transports.
 
 [![PyPI Version](https://badge.fury.io/py/httpxthrottlecache.svg)](https://pypi.python.org/pypi/httpxthrottlecache)
+![Python Versions](https://img.shields.io/pypi/pyversions/httpxthrottlecache)
 
 [![BuildRelease](https://github.com/paultiq/httpxthrottlecache/actions/workflows/build_deploy.yml/badge.svg)](https://github.com/paultiq/httpxthrottlecache/actions/workflows/build_deploy.yml)
 [![Tests](https://github.com/paultiq/httpxthrottlecache/actions/workflows/test.yml/badge.svg)](https://github.com/paultiq/httpxthrottlecache/actions/workflows/test.yml)
@@ -9,10 +10,12 @@ HTTPX Wrapper with Rate Limiting and Caching Transports.
 
 # Introduction
 
-The goal of this project is convenience - leveraging existing rate limiting and caching libraries with a more convenient interface and abstract away certain decisions.
+The goal of this project is a combination of convenience and as a demonstration of how to assemble HTTPX Transports in different combinations. 
 
-This came about while implementing caching & rate limiting for [edgartools](https://edgartools.readthedocs.io/en/latest/): reducing network requests and improving overall performance led to a rabbit hole of decisions. The SEC's Edgar site has a strict 
-10 request per second limit, while providing not-very-helpful caching headers. Overriding these caching headers with custom rules has a significant performance improvement.
+HTTP request libraries, rate limiting and caching are topics with deep rabbit holes: the technical implementation details & the decisions an end user has to make. The convenience part of this package is abstracting away certain decisions and making certain opinionated decisions as to how caching & rate limiting should be controlled. 
+
+This came about while implementing caching & rate limiting for [edgartools](https://edgartools.readthedocs.io/en/latest/): reducing network requests and improving overall performance led to a myriad of decisions. The SEC's Edgar site has a strict 
+10 request per second limit, while providing not-very-helpful caching headers. Overriding these caching headers with custom rules is necessary in certain cases. 
 
 # Caching
 
