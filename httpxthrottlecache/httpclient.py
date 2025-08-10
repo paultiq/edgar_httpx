@@ -190,3 +190,9 @@ class HttpxThrottleCache:
         else:
             logger.info("Cache is DISABLED, rate limiting only")
             return AsyncRateLimitingTransport(self.rate_limiter)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()

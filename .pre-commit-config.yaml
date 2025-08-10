@@ -46,7 +46,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest
+        entry: pytest -n 6
         language: system
         types: [python]
         pass_filenames: false
