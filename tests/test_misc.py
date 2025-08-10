@@ -1,4 +1,4 @@
-from httpxthrottlecache import __version__, HttpxThrottleCache
+from httpxthrottlecache import __version__, HttpxThrottleCache, EDGAR_CACHE_RULES
 import re
 import pytest
 import httpx 
@@ -69,8 +69,9 @@ async def test_short_cache_rule(manager_cache):
     url = "https://www.sec.gov/files/company_tickers.json"
 
     # Change cache duration to 1 second, and make sure the date is revalidated
-    manager_cache.cache_rules[r".*\.sec\.gov"][r"/files/company_tickers\.json.*"] = 1
-    logger.info(manager_cache.cache_rules)
+
+    manager_cache._cache_rules[r".*\.sec\.gov"][r"/files/company_tickers\.json.*"] = 1
+    logger.info(manager_cache._cache_rules)
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
 
@@ -112,7 +113,7 @@ async def test_nodir():
 async def test_mkdir():
     url = "https://httpbin.org/cache/60"
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=False)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=False)
 
     async with mgr.async_http_client() as client:
         response = await client.get(url=url)
@@ -126,11 +127,13 @@ async def test_override_cache_rule(manager_cache):
 
     dir = manager_cache.cache_dir
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=True, cache_dir=dir / "foo")
 
-    mgr.cache_rules["httpbin.org"] = {
+    cache_rules_zero = {"httpbin.org": {
         ".*cache.*": 0
-    }
+    }}
+
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, cache_dir=dir / "foo", cache_rules=cache_rules_zero)
+
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
 
@@ -144,10 +147,11 @@ async def test_override_cache_rule(manager_cache):
         assert response1.headers["date"] < response2.headers["date"]
 
     
-    # False means: Don't cache
-    mgr.cache_rules["httpbin.org"] = {
+    cache_rules_dont_cache = {"httpbin.org": {
         ".*cache.*": False
-    }
+    }}
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, cache_dir=dir / "foo", cache_rules=cache_rules_dont_cache)
+
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
 
@@ -160,10 +164,11 @@ async def test_override_cache_rule(manager_cache):
 
         assert response1.headers["date"] < response2.headers["date"]
 
-    # With None, it'll cache
-    mgr.cache_rules["httpbin.org"] = {
+
+    cache_rules_default = {"httpbin.org": {
         ".*cache.*": None
-    }
+    }}
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, cache_dir=dir / "foo", cache_rules=cache_rules_default)
 
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
