@@ -181,3 +181,15 @@ async def test_override_cache_rule(manager_cache):
         assert response2.status_code == 200, response2.status_code 
 
         assert response1.headers["date"] == response2.headers["date"]
+
+
+@pytest.mark.asyncio
+async def test_contextmgr():
+    url = "https://httpbin.org/cache/60"
+
+    with HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=False) as mgr:
+
+        async with mgr.async_http_client() as client:
+            response = await client.get(url=url)
+
+            assert response.status_code == 200, response.status_code 
