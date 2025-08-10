@@ -24,18 +24,7 @@ try:
 except ImportError:
     HTTP2 = False
 
-class LogTransport(httpx.HTTPTransport):
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
-        logger.info("HTTP Request: %s", request)
-        return super().handle_request(request)
 
-
-class AsyncLogTransport(httpx.AsyncHTTPTransport):
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        logger.info("HTTP Request: %s", request)
-
-        return await super().handle_async_request(request)
-    
 @dataclass
 class HttpxThrottleCache:
     """
@@ -165,8 +154,7 @@ class HttpxThrottleCache:
             yield client
 
     def get_transport(self) -> httpx.BaseTransport:
-
-        rate_limit_transport = RateLimitingTransport(self.rate_limiter, transport = LogTransport())
+        rate_limit_transport = RateLimitingTransport(self.rate_limiter)
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
 
@@ -185,8 +173,7 @@ class HttpxThrottleCache:
             return rate_limit_transport
 
     def get_async_transport(self) -> httpx.AsyncBaseTransport:
-
-        rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter, transport = AsyncLogTransport())
+        rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter)
 
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
