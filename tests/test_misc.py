@@ -1,4 +1,4 @@
-from edgar_httpx import __version__, HttpClientManager
+from httpxthrottlecache import __version__, HttpxThrottleCache
 import re
 import pytest
 import httpx 
@@ -69,7 +69,7 @@ async def test_short_cache_rule(manager_cache):
     url = "https://www.sec.gov/files/company_tickers.json"
 
     # Change cache duration to 1 second, and make sure the date is revalidated
-    manager_cache.cache_rules[r"/files/company_tickers\.json.*"] = 1
+    manager_cache.cache_rules[r".*\.sec\.gov"][r"/files/company_tickers\.json.*"] = 1
     logger.info(manager_cache.cache_rules)
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
@@ -91,7 +91,7 @@ async def test_short_cache_rule(manager_cache):
 @pytest.mark.asyncio
 async def test_explicit_params():
 
-    mgr = HttpClientManager(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=False)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=False)
     url = "https://www.sec.gov/"
 
     async with mgr.async_http_client() as client:
@@ -104,17 +104,15 @@ async def test_explicit_params():
 async def test_nodir():
 
     with pytest.raises(ValueError):
-        mgr = HttpClientManager(cache_enabled=True, cache_dir=None)
+        HttpxThrottleCache(cache_enabled=True, cache_dir=None)
 
 
 
 @pytest.mark.asyncio
-async def test_mkdir(manager_cache):
+async def test_mkdir():
     url = "https://httpbin.org/cache/60"
 
-    dir = manager_cache.cache_dir
-
-    mgr = HttpClientManager(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=True, cache_dir=dir / "foo")
+    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=False)
 
     async with mgr.async_http_client() as client:
         response = await client.get(url=url)

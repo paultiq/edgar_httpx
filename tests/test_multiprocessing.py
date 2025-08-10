@@ -6,7 +6,7 @@ import asyncio
 import pytest
 import os
 
-from edgar_httpx import HttpClientManager
+from httpxthrottlecache import HttpxThrottleCache
 from concurrent.futures import ProcessPoolExecutor, wait, ThreadPoolExecutor
 from pyrate_limiter import limiter_factory, Rate, Duration, MultiprocessBucket
 
@@ -18,7 +18,7 @@ TEST_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.
 
 def my_task(url: str, count: int):
     assert limiter_factory.LIMITER is not None
-    mgr = HttpClientManager(user_agent = USER_AGENT, rate_limiter = limiter_factory.LIMITER, cache_enabled=False)
+    mgr = HttpxThrottleCache(user_agent = USER_AGENT, rate_limiter = limiter_factory.LIMITER, cache_enabled=False)
     with mgr.client() as client:
         for _ in range(count):
             response = client.get(url)

@@ -3,7 +3,7 @@ from typing import Optional
 import httpcore
 
 
-def edgarfile_key_generator(request: httpcore.Request, body: Optional[bytes]) -> str:
+def file_key_generator(request: httpcore.Request, body: Optional[bytes]) -> str:
     """Generates a stable, readable key for a given request.
 
     Args:

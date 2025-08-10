@@ -5,15 +5,13 @@ import time
 import asyncio
 import pytest
 
-from edgar_httpx import HttpClientManager
+from httpxthrottlecache import HttpxThrottleCache
 
-
-user_agent = "Iq Te teiq@iqmo.com"
 
 SMALL_URL = "https://www.sec.gov/Archives/edgar/data/51143/000155837021009351/ibm-20210630ex32157e1d5.htm"
 TEST_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip"
 
-def test_file_sync(manager_cache: HttpClientManager):
+def test_file_sync(manager_cache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
 
@@ -32,17 +30,21 @@ def test_file_sync(manager_cache: HttpClientManager):
 
     assert first_date == second_date
 
-    # Make 30 requests, they should complete in under a second because caching magic
+    # Make 30 requests, they should complete in under a second because caching --magic--
     
     with manager_cache.client() as client:
         start = time.perf_counter()
-        responses = [client.get(url=SMALL_URL).status_code for _ in range(30)]
+        responses = [client.get(url=SMALL_URL) for _ in range(30)]
         end = time.perf_counter()
-    
-    assert min(responses) == 200 and max(responses) == 200
+
+        assert responses[0].headers["date"] == responses[-1].headers["date"]
+
+        codes = [r.status_code for r in responses]
+        assert min(codes) == 200 and max(codes) == 200
+
     assert (end-start) < 1
 
-def test_file_sync_nocache(manager_nocache: HttpClientManager):
+def test_file_sync_nocache(manager_nocache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
 
@@ -72,7 +74,7 @@ def test_file_sync_nocache(manager_nocache: HttpClientManager):
     assert (end-start) > 3
 
 @pytest.mark.asyncio
-async def test_file_async(manager_cache: HttpClientManager):
+async def test_file_async(manager_cache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
 
@@ -106,7 +108,7 @@ async def test_file_async(manager_cache: HttpClientManager):
 
 
 @pytest.mark.asyncio
-async def test_file_async_nocache(manager_nocache: HttpClientManager):
+async def test_file_async_nocache(manager_nocache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
 
@@ -158,7 +160,7 @@ async def test_file_async_nocache(manager_nocache: HttpClientManager):
         assert min(responses) == 200 and max(responses) == 200
         assert (end-start) > 2 and (end-start) < 3.5
     
-def test_short_cache_edgar_url(manager_cache: HttpClientManager):
+def test_short_cache_edgar_url(manager_cache: HttpxThrottleCache):
     url = "https://www.sec.gov/files/company_tickers.json"
 
     with manager_cache.client() as client:
@@ -177,7 +179,7 @@ def test_short_cache_edgar_url(manager_cache: HttpClientManager):
     # Not cached
     assert first_date == second_date
 
-def test_non_edgar_url(manager_cache: HttpClientManager):
+def test_non_edgar_url(manager_cache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
     url = "https://httpbin.org/get"
@@ -198,13 +200,12 @@ def test_non_edgar_url(manager_cache: HttpClientManager):
     assert first_date < second_date
 
 
-def test_close(manager_cache: HttpClientManager):
+def test_close(manager_cache: HttpxThrottleCache):
 
     url = "https://httpbin.org/get"
     with manager_cache.client() as client:
         response = client.get(url=url)
 
-        first_date = response.headers["date"]
         assert response.status_code == 200, response.status_code
 
     manager_cache.close()
@@ -212,5 +213,4 @@ def test_close(manager_cache: HttpClientManager):
     with manager_cache.client() as client:
         response = client.get(url=url)
 
-        first_date = response.headers["date"]
         assert response.status_code == 200, response.status_code

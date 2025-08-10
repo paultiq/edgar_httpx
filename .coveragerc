@@ -1,5 +1,5 @@
 [run]
-source = edgar_httpx
+source = httpx_throttlecache
 relative_files = true
 parallel = true
 omit = 

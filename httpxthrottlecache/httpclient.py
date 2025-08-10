@@ -3,15 +3,16 @@ import threading
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Generator, Optional
 
 import hishel
 import httpx
 from pyrate_limiter import Duration, Limiter
 
 from .controller import get_cache_controller
-from .key_generator import edgarfile_key_generator
+from .key_generator import file_key_generator
 from .ratelimiter import AsyncRateLimitingTransport, RateLimitingTransport, create_rate_limiter
+from .serializer import JSONByteSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -19,19 +20,20 @@ try:
     # enable http2 if h2 is installed
     import h2  # type: ignore  # noqa
 
-    http2 = True  # pragma: no cover
+    HTTP2 = True  # pragma: no cover
 except ImportError:
-    http2 = False
-
-
-MAX_SUBMISSIONS_AGE_SECONDS = 10 * 60  # Check for submissions every 10 minutes
-MAX_INDEX_AGE_SECONDS = 30 * 60  # Check for updates to index (ie: daily-index) every 30 minutes
+    HTTP2 = False
 
 
 @dataclass
-class HttpClientManager:
+class HttpxThrottleCache:
     """
-    Creates and reuses an HTTPX Client.
+    Implements a rate limited, optional-cached HTTPX wrapper that returns client() (httpx.Client) or async_http_client() (httpx.AsyncClient).
+
+    Rate Limiting is across all connections, whether via client & async_htp_client, using pyrate_limiter. For multiprocessing, use pyrate_limiters
+    MultiprocessBucket or SqliteBucket w/ a file lock.
+
+    Caching is implemented via Hishel, which allows a variety of configurations, including AWS storage.
 
     This function is used for all synchronous requests.
     """
@@ -39,7 +41,7 @@ class HttpClientManager:
     cache_enabled: bool
     httpx_params: dict[str, Any]
 
-    cache_rules: dict[str, Union[bool, int]]
+    cache_rules: dict[str, dict[str, str]]
     _client: Optional[httpx.Client] = None
 
     def __init__(
@@ -51,13 +53,14 @@ class HttpClientManager:
         cache_enabled: bool = True,
         cache_dir: Optional[str] = None,
         rate_limiter: Optional[Limiter] = None,
+        cache_rules: Optional[dict[str, dict[str, str]]] = None,
     ):
         self.lock = threading.Lock()
 
         if httpx_params is not None:
             self.httpx_params = httpx_params
         else:
-            self.httpx_params = {"default_encoding": "utf-8", "http2": http2, "verify": True}
+            self.httpx_params = {"default_encoding": "utf-8", "http2": HTTP2, "verify": True}
 
         if user_agent is not None:
             if "headers" not in self.httpx_params:
@@ -65,13 +68,10 @@ class HttpClientManager:
 
             self.httpx_params["headers"]["User-Agent"] = user_agent
 
-        self.cache_rules = {
-            "/submissions.*": MAX_SUBMISSIONS_AGE_SECONDS,
-            r"/include/ticker\.txt.*": MAX_SUBMISSIONS_AGE_SECONDS,
-            r"/files/company_tickers\.json.*": MAX_SUBMISSIONS_AGE_SECONDS,
-            ".*index/.*": MAX_INDEX_AGE_SECONDS,
-            "/Archives/edgar/data": True,  # cache forever
-        }
+        if cache_rules is not None:
+            self.cache_rules = cache_rules
+        else:
+            self.cache_rules = {}
 
         if rate_limiter is None:
             self.rate_limiter = create_rate_limiter(requests_per_second=request_per_sec_limit, max_delay=max_delay)
@@ -81,6 +81,9 @@ class HttpClientManager:
         self.cache_enabled = cache_enabled
 
         if cache_enabled:
+            if not self.cache_rules:
+                logger.info("Cache is enabled, but no cache_rules provided. Will use default caching.")
+
             if cache_dir is None:
                 raise ValueError("cache_dir must be provided if cache_enabled is True")
             else:
@@ -114,7 +117,7 @@ class HttpClientManager:
 
         self.close()
 
-    def edgar_client_factory_async(self, **kwargs) -> httpx.AsyncClient:
+    def client_factory_async(self, **kwargs) -> httpx.AsyncClient:
         params = self.httpx_params.copy()
         params.update(**kwargs)
         params["transport"] = self.get_async_transport()
@@ -135,14 +138,14 @@ class HttpClientManager:
             yield client  # type: ignore # Caller is responsible for closing
             return
 
-        async with self.edgar_client_factory_async(**kwargs) as client:
+        async with self.client_factory_async(**kwargs) as client:
             yield client
 
     def get_transport(self) -> httpx.BaseTransport:
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
-            storage = hishel.FileStorage(base_path=self.cache_dir, serializer=hishel.PickleSerializer())
-            controller = get_cache_controller(key_generator=edgarfile_key_generator, cache_rules=self.cache_rules)
+            storage = hishel.FileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+            controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self.cache_rules)
             rate_limit_transport = RateLimitingTransport(self.rate_limiter)
             return hishel.CacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
@@ -152,8 +155,8 @@ class HttpClientManager:
     def get_async_transport(self) -> httpx.AsyncBaseTransport:
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
-            storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=hishel.PickleSerializer())
-            controller = get_cache_controller(key_generator=edgarfile_key_generator, cache_rules=self.cache_rules)
+            storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+            controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self.cache_rules)
             rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter)
             return hishel.AsyncCacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
