@@ -1,10 +1,5 @@
-import logging
 import time
-from pathlib import Path
-from typing import Optional, Union
 
-import httpcore
-import httpx
 
 import time
 import asyncio
@@ -149,13 +144,13 @@ async def test_file_async_nocache(manager_nocache: HttpClientManager):
     
 
     async with manager_nocache.async_http_client() as client:
-            
+        
+        # warm the rate bucket
         tasks = [client.get(url=SMALL_URL) for _ in range(10)]
         results = await asyncio.gather(*tasks)
         
         start = time.perf_counter()
-
-        tasks = [client.get(url=SMALL_URL) for _ in range(10)]
+        tasks = [client.get(url=SMALL_URL) for _ in range(12)]
         results = await asyncio.gather(*tasks)
         responses = [r.status_code for r in results] 
         end = time.perf_counter()
