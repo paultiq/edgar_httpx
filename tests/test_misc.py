@@ -38,7 +38,7 @@ async def test_no_header(manager_cache):
 
 @pytest.mark.asyncio
 async def test_nonedgar_cacheable(manager_cache):
-    url = "https://httpbin.org/cache/60"
+    url = "https://httpbingo.org/cache/60"
 
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
