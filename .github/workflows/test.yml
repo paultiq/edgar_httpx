@@ -35,7 +35,7 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: uv sync --group gha
+        run: uv sync --group gha --no-dev
       - name: Sleep based on version
         run: |
           python -c "import sys, time; time.sleep({(3,13):5, (3,14):10}.get((sys.version_info.major, sys.version_info.minor), 0))"
