@@ -347,6 +347,7 @@ wheels = [
 name = "httpxthrottlecache"
 source = { editable = "." }
 dependencies = [
+    { name = "filelock" },
     { name = "hishel" },
     { name = "pyrate-limiter" },
 ]
@@ -372,6 +373,7 @@ gha = [
 
 [package.metadata]
 requires-dist = [
+    { name = "filelock", specifier = ">=3.18.0" },
     { name = "hishel", specifier = ">=0.1.3" },
     { name = "pyrate-limiter", specifier = ">=3.9.0" },
 ]
