@@ -21,7 +21,7 @@ This came about while implementing caching & rate limiting for [edgartools](http
 
 This project builds on [Hishel](https://hishel.com/) to provide: 
 
-- Easily configurable File Storage and (TBD) AWS S3 Storage
+- Easily configurable File Storage and AWS S3 Storage
 - Cache Controller driven by rules, defined as:
     ```py
     {

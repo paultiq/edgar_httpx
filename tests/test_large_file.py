@@ -4,7 +4,7 @@ import time
 LARGE_FILE_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip"
  
 def test_large_file(manager_cache: HttpxThrottleCache):
-    with manager_cache.client() as client:
+    with manager_cache.http_client() as client:
         start = time.perf_counter()
         response = client.get(LARGE_FILE_URL)
         end = time.perf_counter()

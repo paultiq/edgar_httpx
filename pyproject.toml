@@ -28,6 +28,8 @@ classifiers = [
 
 [dependency-groups]
 dev = [
+  "boto3>=1.40.6",
+  "moto>=5.1.9",
   "pre-commit>=4.2.0",
   "pylint>=3.3.8",
   "pytest>=8.4.1",
@@ -209,3 +211,6 @@ requires = ["hatchling",
   "uv-dynamic-versioning @ git+https://github.com/paultiq/uv-dynamic-versioning.git; python_version == '3.14'",
 ]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
