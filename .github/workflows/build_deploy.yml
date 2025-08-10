@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: uv sync --group gha
       - name: Build package
         run: |
           uv build
