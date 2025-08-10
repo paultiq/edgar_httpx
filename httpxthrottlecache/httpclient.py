@@ -154,6 +154,7 @@ class HttpxThrottleCache:
             yield client
 
     def get_transport(self) -> httpx.BaseTransport:
+        rate_limit_transport = RateLimitingTransport(self.rate_limiter)
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
 
@@ -165,14 +166,15 @@ class HttpxThrottleCache:
                 storage = hishel.FileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
 
             controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self._cache_rules)
-            rate_limit_transport = RateLimitingTransport(self.rate_limiter)
 
             return hishel.CacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
             logger.info("Cache is DISABLED, rate limiting only")
-            return RateLimitingTransport(self.rate_limiter)
+            return rate_limit_transport
 
     def get_async_transport(self) -> httpx.AsyncBaseTransport:
+        rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter)
+
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
 
@@ -184,12 +186,11 @@ class HttpxThrottleCache:
                 storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
 
             controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self._cache_rules)
-            rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter)
 
             return hishel.AsyncCacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
             logger.info("Cache is DISABLED, rate limiting only")
-            return AsyncRateLimitingTransport(self.rate_limiter)
+            return rate_limit_transport
 
     def __enter__(self):
         return self
