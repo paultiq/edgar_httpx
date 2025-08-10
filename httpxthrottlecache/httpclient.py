@@ -3,7 +3,7 @@ import threading
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional, Union
 
 import hishel
 import httpx
@@ -41,19 +41,19 @@ class HttpxThrottleCache:
     cache_enabled: bool
     httpx_params: dict[str, Any]
 
-    cache_rules: dict[str, dict[str, str]]
+    cache_rules: dict[str, dict[str, Union[bool, int]]]
     _client: Optional[httpx.Client] = None
 
     def __init__(
         self,
         user_agent: Optional[str] = None,
         httpx_params: Optional[dict[str, Any]] = None,
-        request_per_sec_limit: int = 10,
+        request_per_sec_limit: int = 9,
         max_delay: Duration = Duration.DAY,
         cache_enabled: bool = True,
         cache_dir: Optional[str] = None,
         rate_limiter: Optional[Limiter] = None,
-        cache_rules: Optional[dict[str, dict[str, str]]] = None,
+        cache_rules: Optional[dict[str, dict[str, Union[bool, int]]]] = None,
     ):
         self.lock = threading.Lock()
 

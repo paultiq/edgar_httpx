@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.13", "3.14", "3.14t"]
+        python-version: ["3.10", "3.13", "3.14", "3.14t"]
     environment: test
     permissions:
       contents: write
@@ -36,6 +36,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: uv sync --all-groups
+      - name: Sleep based on version
+        run: |
+          python -c "import sys, time; time.sleep({(3,13):5, (3,14):10}.get((sys.version_info.major, sys.version_info.minor), 0))"
       - name: Run tests with coverage and Build
         env:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
