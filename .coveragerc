@@ -1,5 +1,5 @@
 [run]
-source = httpx_throttlecache
+source = httpxthrottlecache
 relative_files = true
 parallel = true
 omit = 
