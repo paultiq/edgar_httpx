@@ -44,6 +44,11 @@ class HttpxThrottleCache:
     _cache_rules: dict[str, dict[str, Union[bool, int]]]
     _client: Optional[httpx.Client] = None
 
+    s3_bucket: Optional[str] = None
+    s3_client: Optional[Any] = None
+
+    cache_dir: Optional[str] = None
+
     def __init__(
         self,
         user_agent: Optional[str] = None,
@@ -54,6 +59,8 @@ class HttpxThrottleCache:
         cache_dir: Optional[str] = None,
         rate_limiter: Optional[Limiter] = None,
         cache_rules: Optional[dict[str, dict[str, Union[bool, int]]]] = None,
+        s3_bucket: Optional[str] = None,
+        s3_client: Optional[Any] = None,
     ):
         self.lock = threading.Lock()
 
@@ -84,15 +91,20 @@ class HttpxThrottleCache:
             if not self._cache_rules:
                 logger.info("Cache is enabled, but no cache_rules provided. Will use default caching.")
 
-            if cache_dir is None:
-                raise ValueError("cache_dir must be provided if cache_enabled is True")
-            else:
-                self.cache_dir = Path(cache_dir)
-                if not self.cache_dir.exists():
-                    self.cache_dir.mkdir()
+            if not s3_bucket:
+                if cache_dir is None:
+                    raise ValueError("cache_dir must be provided if cache_enabled is True")
+                else:
+                    cache_dir_p = Path(cache_dir)
+                    if not cache_dir_p.exists():
+                        cache_dir_p.mkdir()
+                    self.cache_dir = cache_dir
+
+        self.s3_client = s3_client
+        self.s3_bucket = s3_bucket
 
     @contextmanager
-    def client(self, **kwargs) -> Generator[httpx.Client, None, None]:
+    def http_client(self, **kwargs) -> Generator[httpx.Client, None, None]:
         """Provides and reuses a client. Does not close"""
         if self._client is None:
             with self.lock:
@@ -144,9 +156,17 @@ class HttpxThrottleCache:
     def get_transport(self) -> httpx.BaseTransport:
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
-            storage = hishel.FileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+
+            if self.s3_bucket:
+                storage = hishel.S3Storage(
+                    client=self.s3_client, bucket_name=self.s3_bucket, serializer=JSONByteSerializer()
+                )
+            else:
+                storage = hishel.FileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+
             controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self._cache_rules)
             rate_limit_transport = RateLimitingTransport(self.rate_limiter)
+
             return hishel.CacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
             logger.info("Cache is DISABLED, rate limiting only")
@@ -155,9 +175,17 @@ class HttpxThrottleCache:
     def get_async_transport(self) -> httpx.AsyncBaseTransport:
         if self.cache_enabled:
             logger.info("Cache is ENABLED, writing to %s", self.cache_dir)
-            storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+
+            if self.s3_bucket:
+                storage = hishel.AsyncS3Storage(
+                    client=self.s3_client, bucket_name=self.s3_bucket, serializer=JSONByteSerializer()
+                )
+            else:
+                storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+
             controller = get_cache_controller(key_generator=file_key_generator, cache_rules=self._cache_rules)
             rate_limit_transport = AsyncRateLimitingTransport(self.rate_limiter)
+
             return hishel.AsyncCacheTransport(transport=rate_limit_transport, storage=storage, controller=controller)
         else:
             logger.info("Cache is DISABLED, rate limiting only")
