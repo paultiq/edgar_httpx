@@ -34,7 +34,8 @@ jobs:
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Install dependencies 
+        # --no-dev was added to suppress 3.14t warnings about the GIL being enabled with GHA
         run: uv sync --group gha --no-dev
       - name: Sleep based on version
         run: |
@@ -43,7 +44,7 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
         run: |
-          uv run pytest --verbose --cov --cov-report=term-missing
+          uv run --no-dev pytest --verbose --cov --cov-report=term-missing
           uv build
       - name: Python Coverage Comment if main
         if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == env.LATEST_PY_VERSION }}

@@ -37,7 +37,7 @@ jobs:
           uv build
       - name: Run tests
         run: |
-          uv run pytest
+          uv run --no-dev pytest
       # if statement is redundant with on tags
       - name: Upload package to PyPI
         if: startsWith(github.ref, 'refs/tags/v')
