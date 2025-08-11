@@ -4,9 +4,22 @@ import pytest
 import asyncio
 import io
 
+class _Events:
+    def register_first(self, *args, **kwargs): pass
+    def register_last(self, *args, **kwargs): pass
+
+    def register(self, *args, **kwargs): pass
+    def unregister(self, *args, **kwargs): pass
+
+class _Meta:
+    def __init__(self):
+        self.events = _Events()
+
 class s3_mock:
     def __init__(self): 
         self.store={}
+        self.meta=_Meta()
+
     def create_bucket(self, Bucket): 
         ...
     def put_object(self, Bucket, Key, Body, Metadata): 
@@ -20,18 +33,27 @@ class s3_mock:
         return {"Contents":[{"Key": k[1]} for k in self.store.keys() if k[0]==Bucket]}
     def delete_object(self, Bucket, Key): 
         self.store.pop((Bucket,Key), None)
+    def upload_fileobj(self, Fileobj, Bucket, Key, ExtraArgs=None, Callback=None, Config=None):
+        data = Fileobj.read()
+        if Callback: Callback(len(data))
+        self.put_object(Bucket=Bucket, Key=Key, Body=data, Metadata=(ExtraArgs or {}).get("Metadata", {}))
+
+    def download_fileobj(self, Bucket, Key, Fileobj, ExtraArgs=None, Callback=None, Config=None):
+        body = self.store[(Bucket, Key)]["Body"]
+        Fileobj.write(body)
+        if Callback: Callback(len(body))
 
 class boto3():
     def client(*args, **kwargs):
         return s3_mock()
 
 def test_s3_sync():
-    url = "https://httpbin.org/cache/60"
+    url = "https://httpbingo.org/cache/60"
 
     s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="mybucket")
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, s3_bucket="mybucket", s3_client=s3)
+    mgr = HttpxThrottleCache(cache_mode="Hishel-S3", httpx_params={"headers": {}}, s3_bucket="mybucket", s3_client=s3)
     
     with mgr.http_client() as client:
         response1 = client.get(url=url)
@@ -48,12 +70,12 @@ def test_s3_sync():
 
 @pytest.mark.asyncio
 async def test_s3_async():
-    url = "https://httpbin.org/cache/60"
+    url = "https://httpbingo.org/cache/60"
 
     s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="mybucket")
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, s3_bucket="mybucket", s3_client=s3)
+    mgr = HttpxThrottleCache(cache_mode="Hishel-S3", httpx_params={"headers": {}}, s3_bucket="mybucket", s3_client=s3)
     
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)

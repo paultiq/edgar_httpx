@@ -204,14 +204,12 @@ extend-include = ["*.ipynb"]
 # pyflakes, pycodestyle, isort
 select = ["F", "E", "W", "S", "B", "G", "N", "I001", "T", "PD", "C90"]
 ignore = [
-  # E203,
-  # "W503",
-  # "W293",
   "W291",
   "E501",
   "S608",
   "PD901",
-  "C901"
+  "C901",
+  "S101"
 ]
 
 [build-system]

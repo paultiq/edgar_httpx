@@ -16,12 +16,12 @@ def manager_cache(tmp_path_factory, request):
     safe_name = request.node.nodeid.replace("::", "__").replace("/", "_")
     cache_dir = tmp_path_factory.mktemp(safe_name)
 
-    mgr = HttpxThrottleCache(user_agent=user_agent, cache_dir=cache_dir, cache_rules=EDGAR_CACHE_RULES)
+    mgr = HttpxThrottleCache(user_agent=user_agent, cache_dir=cache_dir, cache_mode="Hishel-File", cache_rules=EDGAR_CACHE_RULES)
     return mgr
 
 @pytest.fixture
 def manager_nocache(tmp_path_factory, request):
     user_agent = os.environ["EDGAR_IDENTITY"]
 
-    mgr = HttpxThrottleCache(user_agent=user_agent, cache_enabled=False, cache_dir=None)
+    mgr = HttpxThrottleCache(user_agent=user_agent, cache_mode="Disabled", cache_dir=None)
     return mgr

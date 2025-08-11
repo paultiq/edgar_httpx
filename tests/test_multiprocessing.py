@@ -18,7 +18,7 @@ TEST_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.
 
 def my_task(url: str, count: int):
     assert limiter_factory.LIMITER is not None
-    mgr = HttpxThrottleCache(user_agent = USER_AGENT, rate_limiter = limiter_factory.LIMITER, cache_enabled=False)
+    mgr = HttpxThrottleCache(user_agent = USER_AGENT, rate_limiter = limiter_factory.LIMITER, cache_mode=False)
     with mgr.http_client() as client:
         for _ in range(count):
             response = client.get(url)

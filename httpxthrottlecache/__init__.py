@@ -1,5 +1,5 @@
 from ._version import __version__
-from .httpclient import HttpxThrottleCache
+from .httpxclientmanager import HttpxThrottleCache
 
 __all__ = ["HttpxThrottleCache", "__version__"]
 
