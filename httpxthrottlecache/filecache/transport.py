@@ -10,11 +10,13 @@ import logging
 import os
 import time
 from pathlib import Path
+from threading import local
 from typing import Iterator, Optional, Union
 from urllib.parse import quote, unquote
 
+import aiofiles
 import httpx
-from filelock import BaseFileLock, FileLock
+from filelock import AsyncFileLock, BaseFileLock, FileLock
 from httpx._types import SyncByteStream  # protocol type
 
 from ..controller import get_rule_for_request
@@ -52,7 +54,7 @@ class FileCache:
 
     def store(self, host: str, path: str, query: str, content: bytes, fetched_ts: float, origin_lm_ts: float) -> bool:
         p = self.to_path(host=host, path=path, query=query)
-        tmp = p.with_suffix(p.suffix + ".tmp")
+        tmp = p.with_name(p.name + ".tmp")
         if self.locking:
             with FileLock(str(p) + ".lock"):
                 tmp.write_bytes(content)
@@ -101,7 +103,7 @@ class _TeeCore:
     def __init__(self, resp: httpx.Response, path: Path, locking: bool, last_modified: str, access_date: str):
         assert path is not None
 
-        self.resp, self.path, self.tmp = resp, path, path.with_suffix(".tmp")
+        self.resp, self.path, self.tmp = resp, path, path.with_name(path.name + ".tmp")
         self.lock = FileLock(str(path) + ".lock") if locking else None
         self.fh = None
         self.mtime = calendar.timegm(time.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT"))
@@ -155,29 +157,38 @@ class _TeeToDisk(SyncByteStream):
 
 
 class _AsyncTeeToDisk(httpx.AsyncByteStream):
-    def __init__(self, resp: httpx.Response, path: Path, locking: bool, last_modified: str, access_date) -> None:
-        assert path is not None
-        self.core = _TeeCore(resp, path, locking, last_modified, access_date)
+    def __init__(self, resp, path, locking, last_modified, access_date):
+        self.resp, self.path, self.tmp = resp, path, path.with_name(path.name + ".tmp")
+        self.lock = AsyncFileLock(str(path) + ".lock") if locking else None
+        self.mtime = calendar.timegm(time.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT"))
+        self.atime = calendar.timegm(time.strptime(access_date, "%a, %d %b %Y %H:%M:%S GMT"))
 
     async def __aiter__(self):
-        await asyncio.to_thread(self.core.acquire)
-        await asyncio.to_thread(self.core.open_tmp)
+        if self.lock:
+            await self.lock.acquire()
         try:
-            async for chunk in self.core.resp.aiter_raw():
-                await asyncio.to_thread(self.core.write, chunk)
-                yield chunk
+            async with aiofiles.open(self.tmp, "wb") as f:
+                async for chunk in self.resp.aiter_raw():
+                    await f.write(chunk)
+                    yield chunk
+            os.replace(self.tmp, self.path)
+            async with aiofiles.open(self.path.with_suffix(self.path.suffix + ".meta"), "w") as m:
+                await m.write(json.dumps({"fetched": self.atime, "origin_lm": self.mtime}))
         finally:
-            await asyncio.to_thread(self.core.finalize)
+            if self.lock:
+                await self.lock.release()
 
-    async def aclose(self) -> None:
+    async def aclose(self):
         try:
-            await self.core.resp.aclose()
+            await self.resp.aclose()
         finally:
-            await asyncio.to_thread(self.core.finalize)
+            if self.lock:
+                await self.lock.release()
 
 
 class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     cache_rules: dict[str, dict[str, Union[bool, int]]]
+    _thread_local_locks: local
 
     def __init__(
         self,
@@ -188,6 +199,16 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         self._cache = FileCache(cache_dir=cache_dir, locking=True)
         self.transport = transport or httpx.HTTPTransport()
         self.cache_rules = cache_rules
+        self._thread_local = local()
+
+    def _get_async_lock(self):
+        """Must be called before first try_acquire_async for each thread"""
+        try:
+            return self._thread_local.async_lock
+        except AttributeError:
+            lock = asyncio.Lock()
+            self._thread_local.async_lock = lock
+            return lock
 
     def _url_of(self, req: httpx.Request) -> str:
         s = (req.url.scheme or b"https").decode()
@@ -232,21 +253,29 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
             extensions=net.extensions,
         )
 
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
-        if request.method != "GET":
-            return self.transport.handle_request(request)
-
+    def return_if_fresh(self, request):
         fresh, path = self._cache.get_if_fresh(
             request.url.host, request.url.path, request.url.query.decode(), self.cache_rules
         )
         if path:
             if fresh:
                 content = path.read_bytes()
-                return self._cache_hit_response(request, path, content)
+                return self._cache_hit_response(request, path, content), path
             else:
                 lm = json.loads(path.with_suffix(path.suffix + ".meta").read_text()).get("origin_lm")
                 if lm:
                     request.headers["If-Modified-Since"] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(lm))
+                    return None, path
+        else:
+            return None, None
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if request.method != "GET":
+            return self.transport.handle_request(request)
+
+        response, path = self.return_if_fresh(request)
+        if response:
+            return response
 
         net = self.transport.handle_request(request)
         if net.status_code == 304:
@@ -264,19 +293,12 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         if request.method != "GET":
             return await self.transport.handle_async_request(request)  # type: ignore[attr-defined]
-        fresh, path = self._cache.get_if_fresh(
-            request.url.host, request.url.path, request.url.query.decode(), self.cache_rules
-        )
-        if path:
-            if fresh:
-                content = path.read_bytes()
-                return self._cache_hit_response(request, path, content)
-            else:
-                lm = json.loads(path.with_suffix(path.suffix + ".meta").read_text()).get("origin_lm")
-                if lm:
-                    request.headers["If-Modified-Since"] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(lm))
 
-        net = await self.transport.handle_async_request(request)  # type: ignore[attr-defined]
+        response, path = self.return_if_fresh(request)
+        if response:
+            return response
+
+        net = await self.transport.handle_async_request(request)
         if net.status_code == 304:
             assert path is not None  # must be true
             logger.info("304 for %s", request)
