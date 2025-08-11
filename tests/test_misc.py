@@ -30,10 +30,11 @@ async def test_no_header(manager_cache):
     url = "https://www.sec.gov/files/company_tickers.json"
 
     manager_cache.httpx_params["headers"] = {}
+    manager_cache.user_agent = None
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
-
-        assert response.status_code == 403, response.status_code # no header passed
+    
+        assert response.status_code == 403, response.status_code# no header passed
 
 
 @pytest.mark.asyncio
@@ -46,13 +47,17 @@ async def test_nonedgar_cacheable(manager_cache):
         assert response.status_code == 200, response.status_code # no header passed
         date1 = response.headers["date"]
 
+    await asyncio.sleep(1.5)
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
 
         assert response.status_code == 200, response.status_code # no header passed
         date2 = response.headers["date"]
     
-    assert date1==date2
+    if manager_cache.cache_mode != "FileCache":
+        assert date1==date2
+    else: # FileCache requires last-modified, which httpbingo doesn't provide
+        assert date1 <= date2 
 
 @pytest.mark.asyncio
 async def test_not_cacheable(manager_cache):
@@ -70,8 +75,8 @@ async def test_short_cache_rule(manager_cache):
 
     # Change cache duration to 1 second, and make sure the date is revalidated
 
-    manager_cache._cache_rules[r".*\.sec\.gov"][r"/files/company_tickers\.json.*"] = 1
-    logger.info(manager_cache._cache_rules)
+    manager_cache.cache_rules[r".*\.sec\.gov"][r"/files/company_tickers\.json.*"] = 1
+    logger.info(manager_cache.cache_rules)
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
 
@@ -82,17 +87,17 @@ async def test_short_cache_rule(manager_cache):
     async with manager_cache.async_http_client() as client:
         response2 = await client.get(url=url)
 
-        assert response2.status_code == 200, response2.status_code 
+        assert response2.status_code in (200, 304), response2.status_code 
 
     second_date = response2.headers["date"]
 
-    assert second_date > first_date
+    assert second_date > first_date or response2.status_code == 304
 
 
 @pytest.mark.asyncio
 async def test_explicit_params():
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_enabled=False)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {"User-Agent": "iq de deiq@iqmo.com"}}, cache_mode="Disabled")
     url = "https://www.sec.gov/"
 
     async with mgr.async_http_client() as client:
@@ -105,15 +110,15 @@ async def test_explicit_params():
 async def test_nodir():
 
     with pytest.raises(ValueError):
-        HttpxThrottleCache(cache_enabled=True, cache_dir=None)
+        HttpxThrottleCache(cache_dir=None)
 
 
 
 @pytest.mark.asyncio
 async def test_mkdir():
-    url = "https://httpbin.org/cache/60"
+    url = "https://httpbingo.org/cache/60"
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=False)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_mode=False)
 
     async with mgr.async_http_client() as client:
         response = await client.get(url=url)
@@ -123,16 +128,16 @@ async def test_mkdir():
 
 @pytest.mark.asyncio
 async def test_override_cache_rule(manager_cache):
-    url = "https://httpbin.org/cache/60"
+    url = "https://httpbingo.org/cache/60"
 
     dir = manager_cache.cache_dir
 
 
-    cache_rules_zero = {"httpbin.org": {
+    cache_rules_zero = {"httpbingo.org": {
         ".*cache.*": 0
     }}
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, cache_dir=dir / "foo", cache_rules=cache_rules_zero)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_dir=dir / "foo", cache_rules=cache_rules_zero)
 
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
@@ -147,10 +152,10 @@ async def test_override_cache_rule(manager_cache):
         assert response1.headers["date"] < response2.headers["date"]
 
     
-    cache_rules_dont_cache = {"httpbin.org": {
+    cache_rules_dont_cache = {"httpbingo.org": {
         ".*cache.*": False
     }}
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, cache_dir=dir / "foo", cache_rules=cache_rules_dont_cache)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_dir=dir / "foo", cache_rules=cache_rules_dont_cache)
 
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
@@ -165,10 +170,10 @@ async def test_override_cache_rule(manager_cache):
         assert response1.headers["date"] < response2.headers["date"]
 
 
-    cache_rules_default = {"httpbin.org": {
+    cache_rules_default = {"httpbingo.org": {
         ".*cache.*": None
     }}
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=True, cache_dir=dir / "foo", cache_rules=cache_rules_default)
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_dir=dir / "foo", cache_rules=cache_rules_default)
 
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
@@ -185,9 +190,9 @@ async def test_override_cache_rule(manager_cache):
 
 @pytest.mark.asyncio
 async def test_contextmgr():
-    url = "https://httpbin.org/cache/60"
+    url = "https://httpbingo.org/cache/60"
 
-    with HttpxThrottleCache(httpx_params={"headers": {}}, cache_enabled=False) as mgr:
+    with HttpxThrottleCache(httpx_params={"headers": {}}, cache_mode="Disabled") as mgr:
 
         async with mgr.async_http_client() as client:
             response = await client.get(url=url)

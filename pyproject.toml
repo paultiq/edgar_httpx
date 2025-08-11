@@ -14,8 +14,10 @@ keywords = [
   "hishel"
 ]
 dependencies = [
+  "aiofiles>=24.1.0",
+  "filelock>=3.18.0",
   "hishel>=0.1.3",
-  "pyrate-limiter>=3.9.0"
+  "pyrate-limiter>=3.9.0",
 ]
 classifiers = [
     "Programming Language :: Python :: 3.9",
@@ -34,6 +36,7 @@ gha = [
   "pytest-asyncio>=1.1.0",
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
+  "tqdm>=4.67.1",
 ]
 
 dev = [
@@ -45,6 +48,7 @@ dev = [
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
   "ruff>=0.12.8",
+  "tqdm>=4.67.1",
 ]
 
 [project.urls]
@@ -203,14 +207,12 @@ extend-include = ["*.ipynb"]
 # pyflakes, pycodestyle, isort
 select = ["F", "E", "W", "S", "B", "G", "N", "I001", "T", "PD", "C90"]
 ignore = [
-  # E203,
-  # "W503",
-  # "W293",
   "W291",
   "E501",
   "S608",
   "PD901",
-  "C901"
+  "C901",
+  "S101"
 ]
 
 [build-system]

@@ -19,22 +19,28 @@ This came about while implementing caching & rate limiting for [edgartools](http
 
 # Caching
 
-This project builds on [Hishel](https://hishel.com/) to provide: 
+This project provides four `cache_mode` options:
+- Disabled: Rate Limiting only
+- Hishel-File: Cache using Hishel using FileStorage
+- Hishel-S3: Cache using Hishel using S3Storage
+- FileCache: Use a simpler filecache backend that uses file modified and created time and only revalidates using last-modified. For sites where last-modified is provided. 
 
-- Easily configurable File Storage and AWS S3 Storage
-- Cache Controller driven by rules, defined as:
-    ```py
-    {
-        'site_regex': {
-            'url_regex': duration
-        }
+Cache Rules are defined as a dictionary of site regular expressions to path regular expressions. 
+```py
+{
+    'site_regex': {
+        'url_regex': duration,
+        'url_regex2': duration,
+        '.*': 3600, # cache all paths for this site for an hour
     }
-    ```
+}
+```
 
-    duration is int | bool:
-    - int: # of seconds to treat the file as unchanged: the file will not be revalidated during this period
-    - true: infinite caching - never re-validate
-- A cache_dir must be passed to the HttpxThrottleCache(cache_dir=) initializer if caching is to be used. 
+## FileCache
+
+The FileCache implementation stores files with a .meta sidecar. The .meta contains any additional file metadata that will increment on revalidation. 
+
+FileCache currently only revalidates using Last-Modified. Will do Etag support when I have a need for it (PRs welcome).
 
 # Rate Limiting
 

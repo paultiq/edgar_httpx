@@ -169,20 +169,19 @@ def test_short_cache_edgar_url(manager_cache: HttpxThrottleCache):
         first_date = response.headers["date"]
         assert response.status_code == 200, response.status_code
 
-    time.sleep(1)
+    time.sleep(2)
     with manager_cache.http_client() as client:
         response = client.get(url=url)
 
         second_date = response.headers["date"]
         assert response.status_code == 200, response.status_code
 
-    # Not cached
     assert first_date == second_date
 
 def test_non_edgar_url(manager_cache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
-    url = "https://httpbin.org/get"
+    url = "https://httpbingo.org/get"
     with manager_cache.http_client() as client:
         response = client.get(url=url)
 
@@ -202,7 +201,7 @@ def test_non_edgar_url(manager_cache: HttpxThrottleCache):
 
 def test_close(manager_cache: HttpxThrottleCache):
 
-    url = "https://httpbin.org/get"
+    url = "https://httpbingo.org/get"
     with manager_cache.http_client() as client:
         response = client.get(url=url)
 
