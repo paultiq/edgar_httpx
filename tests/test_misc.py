@@ -53,7 +53,10 @@ async def test_nonedgar_cacheable(manager_cache):
         assert response.status_code == 200, response.status_code # no header passed
         date2 = response.headers["date"]
     
-    assert date1==date2
+    if manager_cache.cache_mode != "FileCache":
+        assert date1==date2
+    else: # FileCache requires last-modified, which httpbingo doesn't provide
+        assert date1 <= date2 
 
 @pytest.mark.asyncio
 async def test_not_cacheable(manager_cache):

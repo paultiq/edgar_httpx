@@ -157,6 +157,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     def _cache_miss_response(self, req, net, path, tee_factory):
         if net.status_code != 200:
             return net
+
         miss_headers = [
             (k, v)
             for k, v in net.headers.items()
@@ -183,7 +184,12 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
                 request, path, content, getattr(st, "st_birthtime", st.st_ctime), st.st_mtime
             )
         net = self.transport.handle_request(request)
-        return self._cache_miss_response(request, net, path, _TeeToDisk)
+
+        if "Last-Modified" not in net.headers:
+            logger.info("No Last-Modified, not caching")
+            return net
+        else:
+            return self._cache_miss_response(request, net, path, _TeeToDisk)
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         if request.method != "GET":
@@ -197,4 +203,9 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
                 request, path, content, getattr(st, "st_birthtime", st.st_ctime), st.st_mtime
             )
         net = await self.transport.handle_async_request(request)  # type: ignore[attr-defined]
-        return self._cache_miss_response(request, net, path, _AsyncTeeToDisk)
+
+        if "Last-Modified" not in net.headers:
+            logger.info("No Last-Modified, not caching")
+            return net
+        else:
+            return self._cache_miss_response(request, net, path, _AsyncTeeToDisk)
