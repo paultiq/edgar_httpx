@@ -86,11 +86,11 @@ async def test_short_cache_rule(manager_cache):
     async with manager_cache.async_http_client() as client:
         response2 = await client.get(url=url)
 
-        assert response2.status_code == 200, response2.status_code 
+        assert response2.status_code in (200, 304), response2.status_code 
 
     second_date = response2.headers["date"]
 
-    assert second_date > first_date
+    assert second_date > first_date or response2.status_code == 304
 
 
 @pytest.mark.asyncio

@@ -176,7 +176,6 @@ def test_short_cache_edgar_url(manager_cache: HttpxThrottleCache):
         second_date = response.headers["date"]
         assert response.status_code == 200, response.status_code
 
-    # Not cached
     assert first_date == second_date
 
 def test_non_edgar_url(manager_cache: HttpxThrottleCache):

@@ -155,7 +155,7 @@ class HttpxThrottleCache:
             return next_transport
         elif self.cache_mode == "FileCache":
             assert self.cache_dir is not None
-            return CachingTransport(cache_dir=self.cache_dir, transport=next_transport)
+            return CachingTransport(cache_dir=self.cache_dir, transport=next_transport, cache_rules=self.cache_rules)
         else:
             # either Hishel-S3 or Hishel-File
             assert self.cache_mode == "Hishel-File" or self.cache_mode == "Hishel-S3"
@@ -180,6 +180,7 @@ class HttpxThrottleCache:
         Caching Transport (if enabled) => Rate Limiting Transport (if enabled) => httpx.HTTPTransport
         """
         if self.rate_limiter_enabled:
+            assert self.rate_limiter is not None
             next_transport = AsyncRateLimitingTransport(self.rate_limiter)
         else:
             next_transport = httpx.AsyncHTTPTransport()
@@ -189,7 +190,7 @@ class HttpxThrottleCache:
             return next_transport
         elif self.cache_mode == "FileCache":
             assert self.cache_dir is not None
-            return CachingTransport(cache_dir=self.cache_dir, transport=next_transport)
+            return CachingTransport(cache_dir=self.cache_dir, transport=next_transport, cache_rules=self.cache_rules)
         else:
             # either Hishel-S3 or Hishel-File
             assert self.cache_mode == "Hishel-File" or self.cache_mode == "Hishel-S3"
