@@ -52,20 +52,6 @@ class FileCache:
             name += "-" + unquote(query).replace("&", "-").replace("=", "-")
         return self.cache_dir / site / quote(name, safe="._-~")
 
-    def store(self, host: str, path: str, query: str, content: bytes, fetched_ts: float, origin_lm_ts: float) -> bool:
-        p = self.to_path(host=host, path=path, query=query)
-        tmp = p.with_name(p.name + ".tmp")
-        if self.locking:
-            with FileLock(str(p) + ".lock"):
-                tmp.write_bytes(content)
-                tmp.replace(p)
-        else:
-            tmp.write_bytes(content)
-            tmp.replace(p)
-
-        self._meta_path(p).write_text(json.dumps({"fetched": fetched_ts, "origin_lm": origin_lm_ts}))
-        return True
-
     def get_if_fresh(
         self, host: str, path: str, query: str, cache_rules: dict[str, dict[str, Union[bool, int]]]
     ) -> tuple[bool, Path | None]:
@@ -103,7 +89,9 @@ class _TeeCore:
     def __init__(self, resp: httpx.Response, path: Path, locking: bool, last_modified: str, access_date: str):
         assert path is not None
 
-        self.resp, self.path, self.tmp = resp, path, path.with_name(path.name + ".tmp")
+        self.resp = resp
+        self.path = path
+        self.tmp = path.with_name(path.name + ".tmp")
         self.lock = FileLock(str(path) + ".lock") if locking else None
         self.fh = None
         self.mtime = calendar.timegm(time.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT"))
@@ -127,7 +115,12 @@ class _TeeCore:
                 os.replace(self.tmp, self.path)
             try:
                 meta_path = self.path.with_suffix(self.path.suffix + ".meta")
-                meta_path.write_text(json.dumps({"fetched": self.atime, "origin_lm": self.mtime}))
+                headers = {
+                    "content-type": self.resp.headers.get("content-type"),
+                    "content-encoding": self.resp.headers.get("content-encoding"),
+                }
+
+                meta_path.write_text(json.dumps({"fetched": self.atime, "origin_lm": self.mtime, "headers": headers}))
             except FileNotFoundError:
                 pass
         finally:
@@ -158,7 +151,9 @@ class _TeeToDisk(SyncByteStream):
 
 class _AsyncTeeToDisk(httpx.AsyncByteStream):
     def __init__(self, resp, path, locking, last_modified, access_date):
-        self.resp, self.path, self.tmp = resp, path, path.with_name(path.name + ".tmp")
+        self.resp = resp
+        self.path = path
+        self.tmp = path.with_name(path.name + ".tmp")
         self.lock = AsyncFileLock(str(path) + ".lock") if locking else None
         self.mtime = calendar.timegm(time.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT"))
         self.atime = calendar.timegm(time.strptime(access_date, "%a, %d %b %Y %H:%M:%S GMT"))
@@ -173,7 +168,11 @@ class _AsyncTeeToDisk(httpx.AsyncByteStream):
                     yield chunk
             os.replace(self.tmp, self.path)
             async with aiofiles.open(self.path.with_suffix(self.path.suffix + ".meta"), "w") as m:
-                await m.write(json.dumps({"fetched": self.atime, "origin_lm": self.mtime}))
+                headers = {
+                    "content-type": self.resp.headers.get("content-type"),
+                    "content-encoding": self.resp.headers.get("content-encoding"),
+                }
+                await m.write(json.dumps({"fetched": self.atime, "origin_lm": self.mtime, "headers": headers}))
         finally:
             if self.lock:
                 await self.lock.release()
@@ -220,15 +219,23 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         meta = json.loads(path.with_suffix(path.suffix + ".meta").read_text())
         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["fetched"]))
         last_modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["origin_lm"]))
+
+        ct = meta.get("headers", {}).get("content-type", "application/octet-stream")
+        ce = meta.get("headers", {}).get("content-encoding")
+        headers = [
+            ("x-cache", "HIT"),
+            ("content-length", str(len(content))),
+            ("Date", date),
+            ("Last-Modified", last_modified),
+        ]
+        if ce:
+            headers.append(("content-encoding", ce))
+        if ct:
+            headers.append(("content-type", ct))
+
         return httpx.Response(
             status_code=status_code,
-            headers=[
-                ("content-type", "application/octet-stream"),
-                ("x-cache", "HIT"),
-                ("content-length", str(len(content))),
-                ("Date", date),
-                ("Last-Modified", last_modified),
-            ],
+            headers=headers,
             content=content,
             request=req,
         )
@@ -240,7 +247,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         miss_headers = [
             (k, v)
             for k, v in net.headers.items()
-            if k.lower() not in ("content-encoding", "content-length", "transfer-encoding")
+            if k.lower() not in ("transfer-encoding",)  # "content-encoding", "content-length", "transfer-encoding")
         ]
         miss_headers.append(("x-cache", "MISS"))
         return httpx.Response(
@@ -250,7 +257,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
                 net, path, self._cache.locking, net.headers.get("Last-Modified"), net.headers.get("Date")
             ),
             request=req,
-            extensions=net.extensions,
+            extensions={**net.extensions, "decode_content": False},
         )
 
     def return_if_fresh(self, request):

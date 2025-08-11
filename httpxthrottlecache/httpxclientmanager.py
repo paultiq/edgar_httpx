@@ -3,7 +3,7 @@ import threading
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Literal, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Literal, Optional, Union
 
 import hishel
 import httpx
@@ -54,6 +54,7 @@ class HttpxThrottleCache:
     s3_bucket: Optional[str] = None
     s3_client: Optional[Any] = None
     user_agent: Optional[str] = None
+    user_agent_factory: Optional[Callable] = None
 
     cache_dir: Optional[Union[Path, str]] = None
 
@@ -62,12 +63,6 @@ class HttpxThrottleCache:
     def __post_init__(self):
         self.cache_dir = Path(self.cache_dir) if isinstance(self.cache_dir, str) else self.cache_dir
         # self.lock = threading.Lock()
-
-        if self.user_agent is not None:
-            if "headers" not in self.httpx_params:
-                self.httpx_params["headers"] = {}
-
-            self.httpx_params["headers"]["User-Agent"] = self.user_agent
 
         if self.rate_limiter_enabled and self.rate_limiter is None:
             self.rate_limiter = create_rate_limiter(
@@ -89,8 +84,21 @@ class HttpxThrottleCache:
                 if not self.cache_dir.exists():
                     self.cache_dir.mkdir()
 
+    def populate_user_agent(self, params: dict):
+        if self.user_agent_factory is not None:
+            user_agent = self.user_agent_factory()
+        else:
+            user_agent = self.user_agent
+
+        if user_agent is not None:
+            if "headers" not in params:
+                params["headers"] = {}
+
+            params["headers"]["User-Agent"] = user_agent
+        return params
+
     @contextmanager
-    def http_client(self, **kwargs) -> Generator[httpx.Client, None, None]:
+    def http_client(self, bypass_cache: bool = False, **kwargs) -> Generator[httpx.Client, None, None]:
         """Provides and reuses a client. Does not close"""
         if self._client is None:
             with self.lock:
@@ -99,8 +107,11 @@ class HttpxThrottleCache:
                 if self._client is None:
                     logger.info("Creating new HTTPX Client")
                     params = self.httpx_params.copy()
+
+                    self.populate_user_agent(params)
                     params.update(**kwargs)
-                    params["transport"] = self.get_transport()
+                    params["transport"] = self.get_transport(bypass_cache=bypass_cache)
+
                     self._client = httpx.Client(**params)
 
         yield self._client
@@ -115,16 +126,17 @@ class HttpxThrottleCache:
 
         self.close()
 
-    def client_factory_async(self, **kwargs) -> httpx.AsyncClient:
+    def client_factory_async(self, bypass_cache: bool, **kwargs) -> httpx.AsyncClient:
         params = self.httpx_params.copy()
         params.update(**kwargs)
-        params["transport"] = self.get_async_transport()
+        self.populate_user_agent(params)
+        params["transport"] = self.get_async_transport(bypass_cache=bypass_cache)
 
         return httpx.AsyncClient(**params)
 
     @asynccontextmanager
     async def async_http_client(
-        self, client: Optional[httpx.AsyncClient] = None, **kwargs
+        self, client: Optional[httpx.AsyncClient] = None, bypass_cache: bool = False, **kwargs
     ) -> AsyncGenerator[httpx.AsyncClient, None]:
         """
         Async callers should create a single client for a group of tasks, rather than creating a single client per task.
@@ -136,10 +148,10 @@ class HttpxThrottleCache:
             yield client  # type: ignore # Caller is responsible for closing
             return
 
-        async with self.client_factory_async(**kwargs) as client:
+        async with self.client_factory_async(bypass_cache=bypass_cache, **kwargs) as client:
             yield client
 
-    def get_transport(self) -> httpx.BaseTransport:
+    def get_transport(self, bypass_cache: bool) -> httpx.BaseTransport:
         """
         Constructs the Transport Chain:
 
@@ -150,7 +162,7 @@ class HttpxThrottleCache:
         else:
             next_transport = httpx.HTTPTransport()
 
-        if self.cache_mode == "Disabled" or self.cache_mode is False:
+        if bypass_cache or self.cache_mode == "Disabled" or self.cache_mode is False:
             logger.info("Cache is DISABLED, rate limiting only")
             return next_transport
         elif self.cache_mode == "FileCache":
@@ -173,7 +185,7 @@ class HttpxThrottleCache:
 
             return hishel.CacheTransport(transport=next_transport, storage=storage, controller=controller)
 
-    def get_async_transport(self) -> httpx.AsyncBaseTransport:
+    def get_async_transport(self, bypass_cache: bool) -> httpx.AsyncBaseTransport:
         """
         Constructs the Transport Chain:
 
@@ -185,7 +197,7 @@ class HttpxThrottleCache:
         else:
             next_transport = httpx.AsyncHTTPTransport()
 
-        if self.cache_mode == "Disabled" or self.cache_mode is False:
+        if bypass_cache or self.cache_mode == "Disabled" or self.cache_mode is False:
             logger.info("Cache is DISABLED, rate limiting only")
             return next_transport
         elif self.cache_mode == "FileCache":

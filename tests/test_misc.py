@@ -30,10 +30,11 @@ async def test_no_header(manager_cache):
     url = "https://www.sec.gov/files/company_tickers.json"
 
     manager_cache.httpx_params["headers"] = {}
+    manager_cache.user_agent = None
     async with manager_cache.async_http_client() as client:
         response = await client.get(url=url)
-
-        assert response.status_code == 403, response.status_code # no header passed
+    
+        assert response.status_code == 403, response.status_code# no header passed
 
 
 @pytest.mark.asyncio
