@@ -45,7 +45,7 @@ class HttpxThrottleCache:
 
     cache_rules: dict[str, dict[str, Union[bool, int]]] = field(default_factory=lambda: {})
     rate_limiter_enabled: bool = True
-    cache_mode: Union[False, Literal["Disabled", "Hishel-S3", "Hishel-File", "FileCache"]] = "Hishel-File"
+    cache_mode: Literal[False, "Disabled", "Hishel-S3", "Hishel-File", "FileCache"] = "Hishel-File"
     request_per_sec_limit: int = 10
     max_delay: Duration = field(default_factory=lambda: Duration.DAY)
     _client: Optional[httpx.Client] = None
