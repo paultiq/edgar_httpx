@@ -36,6 +36,7 @@ gha = [
   "pytest-asyncio>=1.1.0",
   "pytest-cov>=6.2.1",
   "pytest-xdist>=3.8.0",
+  "tqdm>=4.67.1",
 ]
 
 dev = [
