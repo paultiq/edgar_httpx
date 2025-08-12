@@ -1,9 +1,11 @@
+import asyncio
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, AsyncGenerator, Callable, Generator, Literal, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Iterable, Literal, Optional, Union
 
 import hishel
 import httpx
@@ -97,6 +99,28 @@ class HttpxThrottleCache:
             params["headers"]["User-Agent"] = user_agent
         return params
 
+    def get_batch(self, urls: Iterable[str], _client_mocker=None):
+        """Convenience function to execute a batch of URLs from a sync context
+
+        Current implementation uses a separate thread with an asyncio loop
+        """
+
+        async def _run():
+            async def get_status_content(client, u):
+                r = await client.get(u)
+                if r.status_code in (200, 304):
+                    return r.status_code, r.content
+                else:
+                    return r.status_code, None
+
+            async with self.async_http_client() as client:
+                if _client_mocker:
+                    _client_mocker(client)
+                return await asyncio.gather(*(get_status_content(client, u) for u in urls))
+
+        with ThreadPoolExecutor(1) as pool:
+            return pool.submit(lambda: asyncio.run(_run())).result()
+
     @contextmanager
     def http_client(self, bypass_cache: bool = False, **kwargs) -> Generator[httpx.Client, None, None]:
         """Provides and reuses a client. Does not close"""
@@ -158,6 +182,7 @@ class HttpxThrottleCache:
         Caching Transport (if enabled) => Rate Limiting Transport (if enabled) => httpx.HTTPTransport
         """
         if self.rate_limiter_enabled:
+            assert self.rate_limiter is not None
             next_transport = RateLimitingTransport(self.rate_limiter)
         else:
             next_transport = httpx.HTTPTransport()
@@ -181,7 +206,7 @@ class HttpxThrottleCache:
             else:
                 assert self.cache_mode == "Hishel-File"
                 assert self.cache_dir is not None
-                storage = hishel.FileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+                storage = hishel.FileStorage(base_path=Path(self.cache_dir), serializer=JSONByteSerializer())
 
             return hishel.CacheTransport(transport=next_transport, storage=storage, controller=controller)
 
@@ -202,7 +227,7 @@ class HttpxThrottleCache:
             return next_transport
         elif self.cache_mode == "FileCache":
             assert self.cache_dir is not None
-            return CachingTransport(cache_dir=self.cache_dir, transport=next_transport, cache_rules=self.cache_rules)
+            return CachingTransport(cache_dir=self.cache_dir, transport=next_transport, cache_rules=self.cache_rules)  # pyright: ignore[reportArgumentType]
         else:
             # either Hishel-S3 or Hishel-File
             assert self.cache_mode == "Hishel-File" or self.cache_mode == "Hishel-S3"
@@ -216,7 +241,7 @@ class HttpxThrottleCache:
             else:
                 assert self.cache_mode == "Hishel-File"
                 assert self.cache_dir is not None
-                storage = hishel.AsyncFileStorage(base_path=self.cache_dir, serializer=JSONByteSerializer())
+                storage = hishel.AsyncFileStorage(base_path=Path(self.cache_dir), serializer=JSONByteSerializer())
 
             return hishel.AsyncCacheTransport(transport=next_transport, storage=storage, controller=controller)
 
