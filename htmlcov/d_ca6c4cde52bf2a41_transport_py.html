@@ -70,7 +70,7 @@
             <a id="nextFileLink" class="nav" href="d_fe22025d2a4ee2ec_httpxclientmanager_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.4.3">coverage.py v7.4.3</a>,
-            created at 2025-08-12 15:45 +0000
+            created at 2025-08-12 21:12 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -196,7 +196,7 @@
     <p class="run"><span class="n"><a id="t109" href="#t109">109</a></span><span class="t">            <span class="nam">logger</span><span class="op">.</span><span class="nam">info</span><span class="op">(</span><span class="str">"Cache policy allows unlimited cache, returning %s"</span><span class="op">,</span> <span class="nam">p</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs109" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t110" href="#t110">110</a></span><span class="t">            <span class="key">return</span> <span class="key">True</span><span class="op">,</span> <span class="nam">p</span>&nbsp;</span><span class="r"><label for="ctxs110" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t111" href="#t111">111</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t112" href="#t112">112</a></span><span class="t">        <span class="nam">age</span> <span class="op">=</span> <span class="nam">time</span><span class="op">.</span><span class="nam">time</span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="nam">fetched</span>&nbsp;</span><span class="r"><label for="ctxs112" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t112" href="#t112">112</a></span><span class="t">        <span class="nam">age</span> <span class="op">=</span> <span class="nam">round</span><span class="op">(</span><span class="nam">time</span><span class="op">.</span><span class="nam">time</span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="nam">fetched</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs112" class="ctx">(empty)</label></span></p>
     <p class="exc show_exc"><span class="n"><a id="t113" href="#t113">113</a></span><span class="t">        <span class="key">if</span> <span class="nam">age</span> <span class="op">&lt;</span> <span class="num">0</span><span class="op">:</span>  <span class="com"># pragma: no cover</span>&nbsp;</span><span class="r"><label for="ctxs113" class="ctx">(empty)</label></span></p>
     <p class="exc show_exc"><span class="n"><a id="t114" href="#t114">114</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">f"Age is less than 0, impossible {age=}, file {path=}"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t115" href="#t115">115</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">info</span><span class="op">(</span><span class="str">"file is %s seconds old, policy allows caching for up to %s"</span><span class="op">,</span> <span class="nam">age</span><span class="op">,</span> <span class="nam">cached</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs115" class="ctx">(empty)</label></span></p>
@@ -333,8 +333,8 @@
     <p class="pln"><span class="n"><a id="t246" href="#t246">246</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t247" href="#t247">247</a></span><span class="t">    <span class="key">def</span> <span class="nam">_cache_hit_response</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">req</span><span class="op">,</span> <span class="nam">path</span><span class="op">:</span> <span class="nam">Path</span><span class="op">,</span> <span class="nam">status_code</span><span class="op">:</span> <span class="nam">int</span> <span class="op">=</span> <span class="num">200</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs247" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t248" href="#t248">248</a></span><span class="t">        <span class="str">"""</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t249" href="#t249">249</a></span><span class="t"><span class="str">        TODO: More carefully consider async here. read_text, read_bytes both are blocking. </span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t250" href="#t250">250</a></span><span class="t"><span class="str">        </span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t249" href="#t249">249</a></span><span class="t"><span class="str">        TODO: More carefully consider async here. read_text, read_bytes both are blocking.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t250" href="#t250">250</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t251" href="#t251">251</a></span><span class="t"><span class="str">        Large files are streamed async, so the only blocking events here are for reading small(ish) files</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t252" href="#t252">252</a></span><span class="t"><span class="str">        """</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t253" href="#t253">253</a></span><span class="t">        <span class="nam">meta</span> <span class="op">=</span> <span class="nam">json</span><span class="op">.</span><span class="nam">loads</span><span class="op">(</span><span class="nam">path</span><span class="op">.</span><span class="nam">with_suffix</span><span class="op">(</span><span class="nam">path</span><span class="op">.</span><span class="nam">suffix</span> <span class="op">+</span> <span class="str">".meta"</span><span class="op">)</span><span class="op">.</span><span class="nam">read_text</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs253" class="ctx">(empty)</label></span></p>
@@ -457,7 +457,7 @@
             <a id="nextFileLink" class="nav" href="d_fe22025d2a4ee2ec_httpxclientmanager_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.4.3">coverage.py v7.4.3</a>,
-            created at 2025-08-12 15:45 +0000
+            created at 2025-08-12 21:12 +0000
         </p>
     </div>
 </footer>
