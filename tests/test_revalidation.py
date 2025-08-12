@@ -118,3 +118,59 @@ async def test_200_revalidate_refreshes_cache(manager_cache: HttpxThrottleCache,
             assert c2 == body2
             assert r2.status_code==200
         assert calls == 2
+
+
+def test_304_revalidate_serves_cached_sync(manager_cache: HttpxThrottleCache, tmp_path, monkeypatch):
+    calls, last_headers = 0, {}
+    url = "https://example.com/file.bin" 
+
+    manager_cache.cache_rules = {"example.com": {"/file.bin": 1}}
+    dt = datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
+    t0 = dt.timestamp()
+    lm = email.utils.format_datetime(dt, usegmt=True)
+    ttl = 1
+    monkeypatch.setattr(time, "time", lambda: t0)
+    body1 = b"abc"
+
+    class _Chunks(httpx.ByteStream):
+        def __init__(self, b): 
+            self.b=b
+            super().__init__(self)
+
+        def __iter__(self): 
+            yield self.b
+            
+        def close(self): 
+            pass
+
+    def handler(req):
+        nonlocal calls, last_headers
+        calls += 1
+        status = 200 if calls == 1 else 304
+        return Response(status, headers={
+            "Content-Length": str(len(body1)),
+            "Last-Modified": lm,
+            "Date": email.utils.formatdate(t0 if calls==1 else t0+ttl+1, usegmt=True),
+        }, stream=_Chunks(body1), request=req)
+
+    with manager_cache.http_client() as client:
+        mt = httpx.MockTransport(handler)
+        setattr(client._transport, "transport" if hasattr(client._transport, "transport") else "_transport", mt)
+        client._transport.cache_rules = manager_cache.cache_rules
+        # 1) prime cache
+        with client.stream("GET", url) as r1: 
+            assert r1.headers.get("x-cache") == "MISS" or r1.extensions.get("from_cache") == False
+            r1.read()
+            
+        # Move time, so the data is now stale
+        monkeypatch.setattr(time, "time", lambda: t0+ttl+2)
+
+        # Time has moved so the data is outside the cache age, so we need a 304 revalidation
+        with client.stream("GET", url) as r2:
+            assert r2.headers.get("x-cache") == "HIT" or r2.extensions.get("from_cache") == True
+            r2.read()
+        
+            assert r2.status_code in (304, 200)
+
+            assert r1.content==r2.content
+        assert calls == 2  # second network round-trip for 304

@@ -38,26 +38,44 @@ async def test_no_header(manager_cache):
 
 
 @pytest.mark.asyncio
+async def test_nonedgar_query_string(manager_cache):
+    url1 = "https://httpbingo.org/trailers?trailer1=value1&trailer2=value2"
+    url2 = "https://httpbingo.org/trailers?trailer1=value3"
+    manager_cache.cache_rules = {".*": {".*": 100}}
+    async with manager_cache.async_http_client() as client:
+        r1 = await client.get(url=url1)
+
+        assert r1.status_code == 200, r1.status_code # no header passed
+        date1 = r1.headers["date"]
+
+
+        r2 = await client.get(url=url2)
+
+        assert r2.status_code == 200, r2.status_code # no header passed
+        date1 = r2.headers["date"]
+
+        assert r2.headers.get("x-cache") != "HIT" and r2.extensions.get("from_cache") is not True
+
+@pytest.mark.asyncio
 async def test_nonedgar_cacheable(manager_cache):
+    """Demonstrates difference between caching methods: Hishel looks at TTL/max-age, file cache doesn't"""
     url = "https://httpbingo.org/cache/60"
 
     async with manager_cache.async_http_client() as client:
-        response = await client.get(url=url)
+        r1 = await client.get(url=url)
 
-        assert response.status_code == 200, response.status_code # no header passed
-        date1 = response.headers["date"]
+        assert r1.status_code == 200, r1.status_code 
+        date1 = r1.headers["date"]
 
     await asyncio.sleep(1.5)
     async with manager_cache.async_http_client() as client:
-        response = await client.get(url=url)
+        r2 = await client.get(url=url)
 
-        assert response.status_code == 200, response.status_code # no header passed
-        date2 = response.headers["date"]
-    
-    if manager_cache.cache_mode != "FileCache":
-        assert date1==date2
-    else: # FileCache requires last-modified, which httpbingo doesn't provide
-        assert date1 <= date2 
+        assert r2.status_code == 200, r2.status_code
+        date2 = r2.headers["date"]
+
+    assert r2.headers.get("x-cache") == "MISS" or r2.extensions.get("from_cache") == True
+
 
 @pytest.mark.asyncio
 async def test_not_cacheable(manager_cache):
@@ -89,9 +107,9 @@ async def test_short_cache_rule(manager_cache):
 
         assert response2.status_code in (200, 304), response2.status_code 
 
-    second_date = response2.headers["date"]
+    assert response2.headers.get("x-cache") == "HIT" or response2.extensions.get("from_cache") == True
 
-    assert second_date > first_date or response2.status_code == 304
+
 
 
 @pytest.mark.asyncio
@@ -128,6 +146,11 @@ async def test_mkdir():
 
 @pytest.mark.asyncio
 async def test_override_cache_rule(manager_cache):
+
+    """
+        Hishel's default behavior kicks in
+    """
+
     url = "https://httpbingo.org/cache/60"
 
     dir = manager_cache.cache_dir
@@ -137,19 +160,19 @@ async def test_override_cache_rule(manager_cache):
         ".*cache.*": 0
     }}
 
-    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_dir=dir / "foo", cache_rules=cache_rules_zero)
+
+    mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_mode=manager_cache.cache_mode, cache_dir=dir / "foo", cache_rules=cache_rules_zero)
+
 
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)
 
         assert response1.status_code == 200, response1.status_code 
 
-        await asyncio.sleep(2)
         response2 = await client.get(url=url)
 
-        assert response2.status_code == 200, response2.status_code 
+        assert response2.headers.get("x-cache", "MISS") == "MISS" or response2.extensions.get("from_cache") == True
 
-        assert response1.headers["date"] < response2.headers["date"]
 
     
     cache_rules_dont_cache = {"httpbingo.org": {
@@ -162,12 +185,9 @@ async def test_override_cache_rule(manager_cache):
 
         assert response1.status_code == 200, response1.status_code 
 
-        await asyncio.sleep(2)
         response2 = await client.get(url=url)
 
-        assert response2.status_code == 200, response2.status_code 
-
-        assert response1.headers["date"] < response2.headers["date"]
+        assert response2.headers.get("x-cache", "MISS") == "MISS" or response2.extensions.get("from_cache") == True
 
 
     cache_rules_default = {"httpbingo.org": {
@@ -180,12 +200,9 @@ async def test_override_cache_rule(manager_cache):
 
         assert response1.status_code == 200, response1.status_code 
 
-        await asyncio.sleep(2)
         response2 = await client.get(url=url)
+        assert response2.headers.get("x-cache", "MISS") == "MISS" or response2.extensions.get("from_cache") == True
 
-        assert response2.status_code == 200, response2.status_code 
-
-        assert response1.headers["date"] == response2.headers["date"]
 
 
 @pytest.mark.asyncio

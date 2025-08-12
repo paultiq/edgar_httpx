@@ -89,3 +89,10 @@ async def test_s3_async():
         assert response2.status_code == 200, response2.status_code 
 
         assert response1.headers["date"] == response2.headers["date"]
+
+
+@pytest.mark.asyncio
+async def test_no_bucket():
+    
+    with pytest.raises(ValueError):
+        mgr = HttpxThrottleCache(cache_mode="Hishel-S3", s3_bucket=None)
