@@ -26,8 +26,13 @@ def manager_nocache():
 
 
 def mock_client(client):
+
+    class _MockAsyncStream(httpx.AsyncByteStream):
+        async def __aiter__(self): yield b"ok"
+        async def aclose(self): pass
+
     async def _handler(req): 
-        return httpx.Response(200, content=b"ok", headers={"date": "Mon, 01 Jan 2024 00:00:00 GMT"}, request=req)
+        return httpx.Response(200, headers={"date":"Mon, 01 Jan 2024 00:00:00 GMT"}, request=req, stream=_MockAsyncStream())
 
     next_transport = httpx.MockTransport(_handler)
 

@@ -109,7 +109,7 @@ class FileCache:
             logger.info("Cache policy allows unlimited cache, returning %s", p)
             return True, p
 
-        age = time.time() - fetched
+        age = round(time.time() - fetched)
         if age < 0:  # pragma: no cover
             raise ValueError(f"Age is less than 0, impossible {age=}, file {path=}")
         logger.info("file is %s seconds old, policy allows caching for up to %s", age, cached)
@@ -246,8 +246,8 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
 
     def _cache_hit_response(self, req, path: Path, status_code: int = 200):
         """
-        TODO: More carefully consider async here. read_text, read_bytes both are blocking. 
-        
+        TODO: More carefully consider async here. read_text, read_bytes both are blocking.
+
         Large files are streamed async, so the only blocking events here are for reading small(ish) files
         """
         meta = json.loads(path.with_suffix(path.suffix + ".meta").read_text())
