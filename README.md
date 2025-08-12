@@ -36,11 +36,77 @@ Cache Rules are defined as a dictionary of site regular expressions to path regu
 }
 ```
 
+
+## Usage: Synchronous Requests
+
+Note that the Manager object is intended to be long lived, doesn't need to be used as a context manager.
+
+```py
+from httpxthrottlecache import HttpxThrottleCache
+
+url = "https://httpbingo.org/get"
+
+with HttpxThrottleCache(cache_mode="Hishel-File", 
+    cache_dir = "_cache", 
+    rate_limiter_enabled=True, 
+    request_per_sec_limit=10, 
+    user_agent="your user agent") as manager:
+
+    # Single synchronous request
+    with manager.http_client() as client:
+        response = client.get(url)
+        print(response.status_code)
+```
+
+## Usage: Synchronous Batch
+```py
+from httpxthrottlecache import HttpxThrottleCache
+
+url = "https://httpbingo.org/get"
+
+with HttpxThrottleCache(cache_mode="Hishel-File", 
+    cache_dir = "_cache", 
+    rate_limiter_enabled=True, 
+    request_per_sec_limit=10, 
+    user_agent="your user agent") as manager:
+
+# Batch request
+responses = manager.get_batch([url,url])
+print([r[0] for r in responses])
+```
+
+## Usage: Asynchronous
+
+```py
+from httpxthrottlecache import HttpxThrottleCache
+import asyncio 
+
+url = "https://httpbingo.org/get"
+with HttpxThrottleCache(cache_mode="Hishel-File", 
+    cache_dir = "_cache", 
+    rate_limiter_enabled=True, 
+    request_per_sec_limit=10) as manager:
+
+    # Async request
+    async with manager.async_http_client() as client:
+        tasks = [client.get(url) for _ in range(2)]
+        responses = await asyncio.gather(*tasks)
+        print(responses)
+```
+
 ## FileCache
 
-The FileCache implementation stores files with a .meta sidecar. The .meta contains any additional file metadata that will increment on revalidation. 
+The FileCache implementation ignores response caching headers. Instead, it treats data as "fresh" for a client-provided max age. The max age is defined in a cacherule, as defined above.
 
-FileCache currently only revalidates using Last-Modified. Will do Etag support when I have a need for it (PRs welcome).
+Once the max age is expired, the FileCache Transport will revalidate the data using the Last-Modified date. TODO: Revalidate using ETAG as well. 
+
+The FileCache implementation stores files as the raw bytes plus a .meta sidecar. The .meta provides headers, such as Last-Modified, which are used for revalidation. The raw bytes are in the native format - binary files are in their native format, compressed gzip streams are stored as compressed gzip data, etc. 
+
+FileCache uses [FileLock](https://pypi.org/project/filelock/) to ensure only one writer to a cached object. This means that (currently) multiple simultaneous cache misses will stack up waiting to write to file. This locking is intended mainly to allow multiple processes to share the same cache. 
+
+FileCache initially stages data to a .tmp file, then upon completion, copies to the final file. 
+
+No cache cleanup is done - that's your problem.
 
 # Rate Limiting
 
