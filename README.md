@@ -2,17 +2,17 @@
 
 [Full report](https://htmlpreview.github.io/?https://github.com/paultiq/httpxthrottlecache/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-| Name                                      |    Stmts |     Miss |    Cover |   Missing |
-|------------------------------------------ | -------: | -------: | -------: | --------: |
-| httpxthrottlecache/\_\_init\_\_.py        |        4 |        0 |     100% |           |
-| httpxthrottlecache/\_version.py           |        3 |        0 |     100% |           |
-| httpxthrottlecache/controller.py          |       54 |        0 |     100% |           |
-| httpxthrottlecache/filecache/transport.py |      196 |        0 |     100% |           |
-| httpxthrottlecache/httpxclientmanager.py  |      134 |        0 |     100% |           |
-| httpxthrottlecache/key\_generator.py      |       10 |        0 |     100% |           |
-| httpxthrottlecache/ratelimiter.py         |       31 |        0 |     100% |           |
-| httpxthrottlecache/serializer.py          |       27 |        0 |     100% |           |
-|                                 **TOTAL** |  **459** |    **0** | **100%** |           |
+| Name                                      |    Stmts |     Miss |   Cover |   Missing |
+|------------------------------------------ | -------: | -------: | ------: | --------: |
+| httpxthrottlecache/\_\_init\_\_.py        |        4 |        0 |    100% |           |
+| httpxthrottlecache/\_version.py           |        3 |        0 |    100% |           |
+| httpxthrottlecache/controller.py          |       54 |        0 |    100% |           |
+| httpxthrottlecache/filecache/transport.py |      223 |        2 |     99% |    50, 62 |
+| httpxthrottlecache/httpxclientmanager.py  |      134 |        0 |    100% |           |
+| httpxthrottlecache/key\_generator.py      |       10 |        0 |    100% |           |
+| httpxthrottlecache/ratelimiter.py         |       31 |        0 |    100% |           |
+| httpxthrottlecache/serializer.py          |       27 |        0 |    100% |           |
+|                                 **TOTAL** |  **486** |    **2** | **99%** |           |
 
 
 ## Setup coverage badge
