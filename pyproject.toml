@@ -216,10 +216,7 @@ ignore = [
 ]
 
 [build-system]
-requires = ["hatchling",   
-  "uv-dynamic-versioning; python_version != '3.14'",
-  "uv-dynamic-versioning @ git+https://github.com/paultiq/uv-dynamic-versioning.git; python_version == '3.14'",
-]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
