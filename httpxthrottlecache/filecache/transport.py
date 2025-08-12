@@ -30,7 +30,7 @@ class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
     def __init__(
         self,
         path: Path,
-        chunk_size: int = 8192,
+        chunk_size: int = 1024 * 1024,
         on_close: Optional[callable] = None,
         async_on_close: Optional[callable] = None,
     ):
@@ -232,7 +232,7 @@ class _AsyncTeeToDisk(httpx.AsyncByteStream):
 
 class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     cache_rules: dict[str, dict[str, Union[bool, int]]]
-    streaming_cutoff: int = 65536
+    streaming_cutoff: int = 8 * 1024 * 1024
 
     def __init__(
         self,
