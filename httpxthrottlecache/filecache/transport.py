@@ -26,6 +26,42 @@ class AlreadyLockedError(Exception):
     pass
 
 
+class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
+    def __init__(
+        self,
+        path: Path,
+        chunk_size: int = 8192,
+        on_close: Optional[callable] = None,
+        async_on_close: Optional[callable] = None,
+    ):
+        self.path, self.chunk_size = Path(path), chunk_size
+        self.on_close, self.async_on_close = on_close, async_on_close
+
+    def __iter__(self):
+        with open(self.path, "rb") as f:
+            while True:
+                b = f.read(self.chunk_size)
+                if not b:
+                    break
+                yield b
+
+    def close(self) -> None:
+        if self.on_close:
+            self.on_close()
+
+    async def __aiter__(self):
+        async with aiofiles.open(self.path, "rb") as f:
+            while True:
+                b = await f.read(self.chunk_size)
+                if not b:
+                    break
+                yield b
+
+    async def aclose(self) -> None:
+        if self.async_on_close:
+            await self.async_on_close()
+
+
 class FileCache:
     def __init__(self, cache_dir: Union[str, Path], locking: bool = True):
         self.cache_dir = Path(cache_dir)
@@ -196,6 +232,7 @@ class _AsyncTeeToDisk(httpx.AsyncByteStream):
 
 class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     cache_rules: dict[str, dict[str, Union[bool, int]]]
+    streaming_cutoff: int = 65536
 
     def __init__(
         self,
@@ -207,16 +244,18 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         self.transport = transport or httpx.HTTPTransport()
         self.cache_rules = cache_rules
 
-    def _cache_hit_response(self, req, path: Path, content, status_code: int = 200):
+    def _cache_hit_response(self, req, path: Path, status_code: int = 200):
         meta = json.loads(path.with_suffix(path.suffix + ".meta").read_text())
         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["fetched"]))
         last_modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["origin_lm"]))
 
         ct = meta.get("headers", {}).get("content-type", "application/octet-stream")
         ce = meta.get("headers", {}).get("content-encoding")
+        size = os.path.getsize(path)
+
         headers = [
             ("x-cache", "HIT"),
-            ("content-length", str(len(content))),
+            ("content-length", str(size)),
             ("Date", date),
             ("Last-Modified", last_modified),
         ]
@@ -225,12 +264,22 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         if ct:
             headers.append(("content-type", ct))
 
-        return httpx.Response(
-            status_code=status_code,
-            headers=headers,
-            content=content,
-            request=req,
-        )
+        if size < self.streaming_cutoff:
+            # If the file is small, just read it and return it
+            return httpx.Response(
+                status_code=status_code,
+                headers=headers,
+                content=path.read_bytes(),
+                request=req,
+            )
+        else:
+            # If the file is large, stream it
+            return httpx.Response(
+                status_code=status_code,
+                headers=headers,
+                stream=DualFileStream(path),
+                request=req,
+            )
 
     def _cache_miss_response(self, req, net, path, tee_factory):
         if net.status_code != 200:
@@ -261,8 +310,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
 
         if path:
             if fresh:
-                content = path.read_bytes()
-                return self._cache_hit_response(request, path, content), path
+                return self._cache_hit_response(request, path), path
             else:
                 lm = json.loads(path.with_suffix(path.suffix + ".meta").read_text()).get("origin_lm")
                 if lm:
@@ -283,7 +331,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         if net.status_code == 304:
             logger.info("304 for %s", request)
             assert path is not None  # must be true
-            return self._cache_hit_response(request, path, path.read_bytes(), status_code=304)
+            return self._cache_hit_response(request, path, status_code=304)
 
         host = request.url.host
         path = request.url.path
@@ -304,7 +352,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         if net.status_code == 304:
             assert path is not None  # must be true
             logger.info("304 for %s", request)
-            return self._cache_hit_response(request, path, path.read_bytes(), status_code=304)
+            return self._cache_hit_response(request, path, status_code=304)
 
         path = self._cache.to_path(request.url.host, request.url.path, request.url.query.decode())
         return self._cache_miss_response(request, net, path, _AsyncTeeToDisk)
