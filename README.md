@@ -2,17 +2,17 @@
 
 [Full report](https://htmlpreview.github.io/?https://github.com/paultiq/httpxthrottlecache/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-| Name                                      |    Stmts |     Miss |   Cover |   Missing |
-|------------------------------------------ | -------: | -------: | ------: | --------: |
-| httpxthrottlecache/\_\_init\_\_.py        |        4 |        0 |    100% |           |
-| httpxthrottlecache/\_version.py           |        3 |        0 |    100% |           |
-| httpxthrottlecache/controller.py          |       54 |        0 |    100% |           |
-| httpxthrottlecache/filecache/transport.py |      215 |       24 |     89% |44-45, 52, 72, 80, 85, 124-125, 205-210, 213-216, 245, 281, 289-291, 302 |
-| httpxthrottlecache/httpxclientmanager.py  |      134 |        4 |     97% |79, 89, 163, 198 |
-| httpxthrottlecache/key\_generator.py      |        8 |        0 |    100% |           |
-| httpxthrottlecache/ratelimiter.py         |       31 |        0 |    100% |           |
-| httpxthrottlecache/serializer.py          |       27 |        0 |    100% |           |
-|                                 **TOTAL** |  **476** |   **28** | **94%** |           |
+| Name                                      |    Stmts |     Miss |    Cover |   Missing |
+|------------------------------------------ | -------: | -------: | -------: | --------: |
+| httpxthrottlecache/\_\_init\_\_.py        |        4 |        0 |     100% |           |
+| httpxthrottlecache/\_version.py           |        3 |        0 |     100% |           |
+| httpxthrottlecache/controller.py          |       54 |        0 |     100% |           |
+| httpxthrottlecache/filecache/transport.py |      196 |        0 |     100% |           |
+| httpxthrottlecache/httpxclientmanager.py  |      134 |        0 |     100% |           |
+| httpxthrottlecache/key\_generator.py      |       10 |        0 |     100% |           |
+| httpxthrottlecache/ratelimiter.py         |       31 |        0 |     100% |           |
+| httpxthrottlecache/serializer.py          |       27 |        0 |     100% |           |
+|                                 **TOTAL** |  **459** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge

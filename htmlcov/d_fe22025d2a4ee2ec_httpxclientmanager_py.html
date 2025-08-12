@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for httpxthrottlecache/httpxclientmanager.py: 97%</title>
+    <title>Coverage for httpxthrottlecache/httpxclientmanager.py: 100%</title>
     <link rel="icon" sizes="32x32" href="favicon_32.png">
     <link rel="stylesheet" href="style.css" type="text/css">
     <script type="text/javascript">
@@ -17,7 +17,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>httpxthrottlecache/httpxclientmanager.py</b>:
-            <span class="pc_cov">97%</span>
+            <span class="pc_cov">100%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -60,8 +60,8 @@
         </aside>
         <h2>
             <span class="text">134 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">130<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">4<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">134<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">0<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">1<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -70,7 +70,7 @@
             <a id="nextFileLink" class="nav" href="d_fe22025d2a4ee2ec_key_generator_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.4.3">coverage.py v7.4.3</a>,
-            created at 2025-08-11 22:39 +0000
+            created at 2025-08-12 00:26 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -163,7 +163,7 @@
     <p class="run"><span class="n"><a id="t76" href="#t76">76</a></span><span class="t">            <span class="key">pass</span>&nbsp;</span><span class="r"><label for="ctxs76" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t77" href="#t77">77</a></span><span class="t">        <span class="key">elif</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cache_mode</span> <span class="op">==</span> <span class="str">"Hishel-S3"</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs77" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t78" href="#t78">78</a></span><span class="t">            <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">s3_bucket</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs78" class="ctx">(empty)</label></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t79" href="#t79">79</a></span><span class="t">                <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"s3_bucket must be provided if using Hishel-S3 storage"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t79" href="#t79">79</a></span><span class="t">                <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"s3_bucket must be provided if using Hishel-S3 storage"</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs79" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t80" href="#t80">80</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>  <span class="com"># Hishel-File or FileCache</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t81" href="#t81">81</a></span><span class="t">            <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cache_dir</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs81" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t82" href="#t82">82</a></span><span class="t">                <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">f"cache_dir must be provided if using a file based cache: {self.cache_mode}"</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs82" class="ctx">(empty)</label></span></p>
@@ -173,7 +173,7 @@
     <p class="pln"><span class="n"><a id="t86" href="#t86">86</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t87" href="#t87">87</a></span><span class="t">    <span class="key">def</span> <span class="nam">populate_user_agent</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">params</span><span class="op">:</span> <span class="nam">dict</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs87" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t88" href="#t88">88</a></span><span class="t">        <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">user_agent_factory</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs88" class="ctx">(empty)</label></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t89" href="#t89">89</a></span><span class="t">            <span class="nam">user_agent</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">user_agent_factory</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t89" href="#t89">89</a></span><span class="t">            <span class="nam">user_agent</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">user_agent_factory</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs89" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t90" href="#t90">90</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t91" href="#t91">91</a></span><span class="t">            <span class="nam">user_agent</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">user_agent</span>&nbsp;</span><span class="r"><label for="ctxs91" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t92" href="#t92">92</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -247,7 +247,7 @@
     <p class="run"><span class="n"><a id="t160" href="#t160">160</a></span><span class="t">        <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">rate_limiter_enabled</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs160" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t161" href="#t161">161</a></span><span class="t">            <span class="nam">next_transport</span> <span class="op">=</span> <span class="nam">RateLimitingTransport</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">rate_limiter</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs161" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t162" href="#t162">162</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t163" href="#t163">163</a></span><span class="t">            <span class="nam">next_transport</span> <span class="op">=</span> <span class="nam">httpx</span><span class="op">.</span><span class="nam">HTTPTransport</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t163" href="#t163">163</a></span><span class="t">            <span class="nam">next_transport</span> <span class="op">=</span> <span class="nam">httpx</span><span class="op">.</span><span class="nam">HTTPTransport</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs163" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t164" href="#t164">164</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t165" href="#t165">165</a></span><span class="t">        <span class="key">if</span> <span class="nam">bypass_cache</span> <span class="key">or</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cache_mode</span> <span class="op">==</span> <span class="str">"Disabled"</span> <span class="key">or</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cache_mode</span> <span class="key">is</span> <span class="key">False</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs165" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t166" href="#t166">166</a></span><span class="t">            <span class="nam">logger</span><span class="op">.</span><span class="nam">info</span><span class="op">(</span><span class="str">"Cache is DISABLED, rate limiting only"</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs166" class="ctx">(empty)</label></span></p>
@@ -282,7 +282,7 @@
     <p class="run"><span class="n"><a id="t195" href="#t195">195</a></span><span class="t">            <span class="key">assert</span> <span class="nam">self</span><span class="op">.</span><span class="nam">rate_limiter</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span>&nbsp;</span><span class="r"><label for="ctxs195" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t196" href="#t196">196</a></span><span class="t">            <span class="nam">next_transport</span> <span class="op">=</span> <span class="nam">AsyncRateLimitingTransport</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">rate_limiter</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs196" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t197" href="#t197">197</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t198" href="#t198">198</a></span><span class="t">            <span class="nam">next_transport</span> <span class="op">=</span> <span class="nam">httpx</span><span class="op">.</span><span class="nam">AsyncHTTPTransport</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t198" href="#t198">198</a></span><span class="t">            <span class="nam">next_transport</span> <span class="op">=</span> <span class="nam">httpx</span><span class="op">.</span><span class="nam">AsyncHTTPTransport</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs198" class="ctx">(empty)</label></span></p>
     <p class="pln"><span class="n"><a id="t199" href="#t199">199</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t200" href="#t200">200</a></span><span class="t">        <span class="key">if</span> <span class="nam">bypass_cache</span> <span class="key">or</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cache_mode</span> <span class="op">==</span> <span class="str">"Disabled"</span> <span class="key">or</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cache_mode</span> <span class="key">is</span> <span class="key">False</span><span class="op">:</span>&nbsp;</span><span class="r"><label for="ctxs200" class="ctx">(empty)</label></span></p>
     <p class="run"><span class="n"><a id="t201" href="#t201">201</a></span><span class="t">            <span class="nam">logger</span><span class="op">.</span><span class="nam">info</span><span class="op">(</span><span class="str">"Cache is DISABLED, rate limiting only"</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs201" class="ctx">(empty)</label></span></p>
@@ -321,7 +321,7 @@
             <a id="nextFileLink" class="nav" href="d_fe22025d2a4ee2ec_key_generator_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.4.3">coverage.py v7.4.3</a>,
-            created at 2025-08-11 22:39 +0000
+            created at 2025-08-12 00:26 +0000
         </p>
     </div>
 </footer>

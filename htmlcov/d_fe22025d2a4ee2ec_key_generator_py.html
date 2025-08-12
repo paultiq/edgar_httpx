@@ -59,8 +59,8 @@
             </div>
         </aside>
         <h2>
-            <span class="text">8 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">8<span class="text"> run</span></button>
+            <span class="text">10 statements &nbsp;</span>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">10<span class="text"> run</span></button>
             <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">0<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
@@ -70,7 +70,7 @@
             <a id="nextFileLink" class="nav" href="d_fe22025d2a4ee2ec_ratelimiter_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.4.3">coverage.py v7.4.3</a>,
-            created at 2025-08-11 22:39 +0000
+            created at 2025-08-12 00:26 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -100,14 +100,13 @@
     <p class="pln"><span class="n"><a id="t13" href="#t13">13</a></span><span class="t"><span class="str">    Returns:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t"><span class="str">        str: Persistent key for the request</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t15" href="#t15">15</a></span><span class="t"><span class="str">    """</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t">    <span class="nam">host</span> <span class="op">=</span> <span class="nam">request</span><span class="op">.</span><span class="nam">url</span><span class="op">.</span><span class="nam">host</span><span class="op">.</span><span class="nam">decode</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs17" class="ctx">(empty)</label></span></p>
-    <p class="run"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t">    <span class="nam">url</span> <span class="op">=</span> <span class="nam">request</span><span class="op">.</span><span class="nam">url</span><span class="op">.</span><span class="nam">target</span><span class="op">.</span><span class="nam">decode</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs18" class="ctx">(empty)</label></span></p>
-    <p class="pln"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t">    <span class="nam">url_p</span> <span class="op">=</span> <span class="nam">url</span><span class="op">.</span><span class="nam">replace</span><span class="op">(</span><span class="str">"/"</span><span class="op">,</span> <span class="str">"__"</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs20" class="ctx">(empty)</label></span></p>
-    <p class="pln"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t">    <span class="nam">key</span> <span class="op">=</span> <span class="str">f"{host}_{url_p}"</span>&nbsp;</span><span class="r"><label for="ctxs22" class="ctx">(empty)</label></span></p>
-    <p class="run"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t">    <span class="key">return</span> <span class="nam">key</span>&nbsp;</span><span class="r"><label for="ctxs23" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t">    <span class="nam">host</span> <span class="op">=</span> <span class="nam">request</span><span class="op">.</span><span class="nam">url</span><span class="op">.</span><span class="nam">host</span><span class="op">.</span><span class="nam">decode</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs16" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t">    <span class="nam">path_b</span><span class="op">,</span> <span class="nam">_</span><span class="op">,</span> <span class="nam">query_b</span> <span class="op">=</span> <span class="nam">request</span><span class="op">.</span><span class="nam">url</span><span class="op">.</span><span class="nam">target</span><span class="op">.</span><span class="nam">partition</span><span class="op">(</span><span class="str">b"?"</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs17" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t">    <span class="nam">path</span> <span class="op">=</span> <span class="nam">path_b</span><span class="op">.</span><span class="nam">decode</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs18" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t">    <span class="nam">query</span> <span class="op">=</span> <span class="nam">query_b</span><span class="op">.</span><span class="nam">decode</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs19" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t">    <span class="nam">url_p</span> <span class="op">=</span> <span class="nam">path</span><span class="op">.</span><span class="nam">replace</span><span class="op">(</span><span class="str">"/"</span><span class="op">,</span> <span class="str">"__"</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="str">f"__{query.replace('&amp;', '__').replace('=', '__')}"</span> <span class="key">if</span> <span class="nam">query</span> <span class="key">else</span> <span class="str">""</span><span class="op">)</span>&nbsp;</span><span class="r"><label for="ctxs20" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t">    <span class="nam">key</span> <span class="op">=</span> <span class="str">f"{host}_{url_p}"</span>&nbsp;</span><span class="r"><label for="ctxs21" class="ctx">(empty)</label></span></p>
+    <p class="run"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t">    <span class="key">return</span> <span class="nam">key</span>&nbsp;</span><span class="r"><label for="ctxs22" class="ctx">(empty)</label></span></p>
 </main>
 <footer>
     <div class="content">
@@ -117,7 +116,7 @@
             <a id="nextFileLink" class="nav" href="d_fe22025d2a4ee2ec_ratelimiter_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.4.3">coverage.py v7.4.3</a>,
-            created at 2025-08-11 22:39 +0000
+            created at 2025-08-12 00:26 +0000
         </p>
     </div>
 </footer>
