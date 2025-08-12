@@ -30,7 +30,7 @@ class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
     def __init__(
         self,
         path: Path,
-        chunk_size: int = 8192,
+        chunk_size: int = 1024 * 1024,
         on_close: Optional[callable] = None,
         async_on_close: Optional[callable] = None,
     ):
@@ -46,7 +46,7 @@ class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
                 yield b
 
     def close(self) -> None:
-        if self.on_close:
+        if self.on_close:  # pragma: no cover
             self.on_close()
 
     async def __aiter__(self):
@@ -58,7 +58,7 @@ class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
                 yield b
 
     async def aclose(self) -> None:
-        if self.async_on_close:
+        if self.async_on_close:  # pragma: no cover
             await self.async_on_close()
 
 
@@ -232,7 +232,7 @@ class _AsyncTeeToDisk(httpx.AsyncByteStream):
 
 class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     cache_rules: dict[str, dict[str, Union[bool, int]]]
-    streaming_cutoff: int = 65536
+    streaming_cutoff: int = 8 * 1024 * 1024
 
     def __init__(
         self,
@@ -245,6 +245,11 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         self.cache_rules = cache_rules
 
     def _cache_hit_response(self, req, path: Path, status_code: int = 200):
+        """
+        TODO: More carefully consider async here. read_text, read_bytes both are blocking. 
+        
+        Large files are streamed async, so the only blocking events here are for reading small(ish) files
+        """
         meta = json.loads(path.with_suffix(path.suffix + ".meta").read_text())
         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["fetched"]))
         last_modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["origin_lm"]))
