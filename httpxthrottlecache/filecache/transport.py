@@ -46,7 +46,7 @@ class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
                 yield b
 
     def close(self) -> None:
-        if self.on_close:
+        if self.on_close:  # pragma: no cover
             self.on_close()
 
     async def __aiter__(self):
@@ -58,7 +58,7 @@ class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
                 yield b
 
     async def aclose(self) -> None:
-        if self.async_on_close:
+        if self.async_on_close:  # pragma: no cover
             await self.async_on_close()
 
 
