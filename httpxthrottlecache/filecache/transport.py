@@ -3,21 +3,18 @@
 
 """
 
-import asyncio
 import calendar
 import json
 import logging
 import os
 import time
 from pathlib import Path
-
-from threading import local
 from typing import Iterator, Optional, Union
 from urllib.parse import quote, unquote
 
 import aiofiles
 import httpx
-from filelock import AsyncFileLock, BaseFileLock, FileLock
+from filelock import AsyncFileLock, FileLock
 from httpx._types import SyncByteStream  # protocol type
 
 from ..controller import get_rule_for_request
@@ -71,7 +68,6 @@ class FileCache:
         fetched = meta.get("fetched")
         if not fetched:
             return False, p  # pragma: no cover
-            return False, p
 
         if cached is True:
             logger.info("Cache policy allows unlimited cache, returning %s", p)
@@ -82,6 +78,7 @@ class FileCache:
             raise ValueError(f"Age is less than 0, impossible {age=}, file {path=}")
         logger.info("file is %s seconds old, policy allows caching for up to %s", age, cached)
         return (age <= cached, p)
+
 
 class _TeeCore:
     def __init__(self, resp: httpx.Response, path: Path, locking: bool, last_modified: str, access_date: str):
@@ -101,7 +98,6 @@ class _TeeCore:
             self.atime = calendar.timegm(time.strptime(access_date, "%a, %d %b %Y %H:%M:%S GMT"))
         else:
             self.atime = None  # pragma: no cover
-
 
     def acquire(self):
         self.lock and self.lock.acquire()  # pyright: ignore[reportUnusedExpression]
@@ -128,7 +124,6 @@ class _TeeCore:
 
                 meta_path.write_text(json.dumps({"fetched": self.atime, "origin_lm": self.mtime, "headers": headers}))
             except FileNotFoundError:  # pragma: no cover
-
                 pass
         finally:
             if self.lock and getattr(self.lock, "is_locked", False):
@@ -172,7 +167,6 @@ class _AsyncTeeToDisk(httpx.AsyncByteStream):
         else:
             self.atime = None  # pragma: no cover
 
-
     async def __aiter__(self):
         if self.lock:
             await self.lock.acquire()
@@ -202,7 +196,6 @@ class _AsyncTeeToDisk(httpx.AsyncByteStream):
 
 class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     cache_rules: dict[str, dict[str, Union[bool, int]]]
-
 
     def __init__(
         self,
@@ -292,14 +285,12 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
             assert path is not None  # must be true
             return self._cache_hit_response(request, path, path.read_bytes(), status_code=304)
 
-
         host = request.url.host
         path = request.url.path
         query = request.url.query.decode() if request.url.query else ""
 
         path = self._cache.to_path(host, path, query)
         return self._cache_miss_response(request, net, path, _TeeToDisk)
-
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         if request.method != "GET":
@@ -317,4 +308,3 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
 
         path = self._cache.to_path(request.url.host, request.url.path, request.url.query.decode())
         return self._cache_miss_response(request, net, path, _AsyncTeeToDisk)
-
