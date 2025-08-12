@@ -245,6 +245,11 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         self.cache_rules = cache_rules
 
     def _cache_hit_response(self, req, path: Path, status_code: int = 200):
+        """
+        TODO: More carefully consider async here. read_text, read_bytes both are blocking. 
+        
+        Large files are streamed async, so the only blocking events here are for reading small(ish) files
+        """
         meta = json.loads(path.with_suffix(path.suffix + ".meta").read_text())
         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["fetched"]))
         last_modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(meta["origin_lm"]))
