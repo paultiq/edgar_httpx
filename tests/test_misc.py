@@ -48,6 +48,7 @@ async def test_nonedgar_query_string(manager_cache):
         assert r1.status_code == 200, r1.status_code # no header passed
         date1 = r1.headers["date"]
 
+
         r2 = await client.get(url=url2)
 
         assert r2.status_code == 200, r2.status_code # no header passed
@@ -66,6 +67,7 @@ async def test_nonedgar_cacheable(manager_cache):
         assert r1.status_code == 200, r1.status_code 
         date1 = r1.headers["date"]
 
+    await asyncio.sleep(1.5)
     async with manager_cache.async_http_client() as client:
         r2 = await client.get(url=url)
 
@@ -109,6 +111,7 @@ async def test_short_cache_rule(manager_cache):
 
 
 
+
 @pytest.mark.asyncio
 async def test_explicit_params():
 
@@ -143,9 +146,11 @@ async def test_mkdir():
 
 @pytest.mark.asyncio
 async def test_override_cache_rule(manager_cache):
+
     """
         Hishel's default behavior kicks in
     """
+
     url = "https://httpbingo.org/cache/60"
 
     dir = manager_cache.cache_dir
@@ -155,7 +160,9 @@ async def test_override_cache_rule(manager_cache):
         ".*cache.*": 0
     }}
 
+
     mgr = HttpxThrottleCache(httpx_params={"headers": {}}, cache_mode=manager_cache.cache_mode, cache_dir=dir / "foo", cache_rules=cache_rules_zero)
+
 
     async with mgr.async_http_client() as client:
         response1 = await client.get(url=url)

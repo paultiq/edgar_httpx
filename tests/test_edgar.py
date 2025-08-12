@@ -178,6 +178,7 @@ def test_short_cache_edgar_url(manager_cache: HttpxThrottleCache):
 
     assert r2.headers.get("x-cache") == "HIT" or r2.extensions.get("from_cache") == True
 
+
 def test_non_edgar_url(manager_cache: HttpxThrottleCache):
     """Make two requests, make sure they succeed, and make sure the dates are the same: showing the cache hit worked"""
 
