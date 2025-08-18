@@ -103,7 +103,7 @@ class HttpxThrottleCache:
         if os.environ.get("HTTPS_PROXY") is not None:
             self.proxy = os.environ.get("HTTPS_PROXY")
 
-    def populate_user_agent(self, params: dict):
+    def _populate_user_agent(self, params: dict):
         if self.user_agent_factory is not None:
             user_agent = self.user_agent_factory()
         else:
@@ -164,7 +164,7 @@ class HttpxThrottleCache:
         with ThreadPoolExecutor(1) as pool:
             return pool.submit(lambda: asyncio.run(_run())).result()
 
-    def get_httpx_transport_params(self, params: dict[str, Any]):
+    def _get_httpx_transport_params(self, params: dict[str, Any]):
         http2 = params.get("http2", False)
         proxy = self.proxy
 
@@ -181,11 +181,11 @@ class HttpxThrottleCache:
                     logger.debug("Creating new HTTPX Client")
                     params = self.httpx_params.copy()
 
-                    self.populate_user_agent(params)
+                    self._populate_user_agent(params)
 
                     params.update(**kwargs)
-                    params["transport"] = self.get_transport(
-                        bypass_cache=bypass_cache, httpx_transport_params=self.get_httpx_transport_params(params)
+                    params["transport"] = self._get_transport(
+                        bypass_cache=bypass_cache, httpx_transport_params=self._get_httpx_transport_params(params)
                     )
                     self._client = httpx.Client(**params)
 
@@ -201,12 +201,12 @@ class HttpxThrottleCache:
 
         self.close()
 
-    def client_factory_async(self, bypass_cache: bool, **kwargs) -> httpx.AsyncClient:
+    def _client_factory_async(self, bypass_cache: bool, **kwargs) -> httpx.AsyncClient:
         params = self.httpx_params.copy()
         params.update(**kwargs)
-        self.populate_user_agent(params)
-        params["transport"] = self.get_async_transport(
-            bypass_cache=bypass_cache, httpx_transport_params=self.get_httpx_transport_params(params)
+        self._populate_user_agent(params)
+        params["transport"] = self._get_async_transport(
+            bypass_cache=bypass_cache, httpx_transport_params=self._get_httpx_transport_params(params)
         )
 
         return httpx.AsyncClient(**params)
@@ -225,10 +225,10 @@ class HttpxThrottleCache:
             yield client  # type: ignore # Caller is responsible for closing
             return
 
-        async with self.client_factory_async(bypass_cache=bypass_cache, **kwargs) as client:
+        async with self._client_factory_async(bypass_cache=bypass_cache, **kwargs) as client:
             yield client
 
-    def get_transport(self, bypass_cache: bool, httpx_transport_params: dict[str, Any]) -> httpx.BaseTransport:
+    def _get_transport(self, bypass_cache: bool, httpx_transport_params: dict[str, Any]) -> httpx.BaseTransport:
         """
         Constructs the Transport Chain:
 
@@ -263,7 +263,7 @@ class HttpxThrottleCache:
 
             return hishel.CacheTransport(transport=next_transport, storage=storage, controller=controller)
 
-    def get_async_transport(
+    def _get_async_transport(
         self, bypass_cache: bool, httpx_transport_params: dict[str, Any]
     ) -> httpx.AsyncBaseTransport:
         """

@@ -15,7 +15,7 @@ def test_user_agent_factor():
     htc = HttpxThrottleCache(cache_mode="Hishel-S3", s3_bucket="foo", user_agent_factory=lambda: "foo", rate_limiter_enabled=False)
 
     params = {}
-    htc.populate_user_agent(params)
+    htc._populate_user_agent(params)
     assert params["headers"]["User-Agent"] == "foo"
 
 def test_no_ratelimit(manager_cache):
