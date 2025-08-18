@@ -407,7 +407,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "edgartools" },
+    { name = "edgartools", marker = "platform_python_implementation != 'PyPy'" },
     { name = "hishel", extra = ["s3"] },
     { name = "pre-commit-uv" },
     { name = "pylint" },
@@ -431,7 +431,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "edgartools", specifier = ">=4.6.3" },
+    { name = "edgartools", marker = "platform_python_implementation != 'PyPy'", specifier = ">=4.6.3" },
     { name = "hishel", extras = ["s3"], specifier = ">=0.1.3" },
     { name = "pre-commit-uv", specifier = ">=4.1.4" },
     { name = "pylint", specifier = ">=3.3.8" },
