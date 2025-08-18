@@ -27,12 +27,12 @@ jobs:
         include:
         # test oldest & latest versions against ubuntu
         # and one version against windows and macos
-        # - { os: ubuntu-latest, python-version: "3.9" }
+        - { os: ubuntu-latest, python-version: "3.9" }
         - { os: ubuntu-latest, python-version: *latest }
-        # - { os: ubuntu-latest, python-version: "3.14t" }
-        # - { os: ubuntu-latest, python-version: "pypy3.11" }
-        # - { os: windows-latest, python-version: *latest }
-        # - { os: macos-latest, python-version: *latest }
+        - { os: ubuntu-latest, python-version: "3.14t" }
+        - { os: ubuntu-latest, python-version: "pypy3.11" }
+        - { os: windows-latest, python-version: *latest }
+        - { os: macos-latest, python-version: *latest }
     environment: test
     permissions:
       contents: write
@@ -72,7 +72,6 @@ jobs:
           curl -s -o /dev/null -w "%{http_code}\n" http://httpbingo.org/get  | grep -q '^200$'
           curl -s -o /dev/null -w "%{http_code}\n" https://httpbingo.org/get | grep -q '^200$'
           uv run pytest tests/extras/test_proxy.py
-
       - name: Python Coverage Comment if main
         if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == env.LATEST_PY_VERSION && matrix.os == 'ubuntu-latest' }}
         uses: py-cov-action/python-coverage-comment-action@v3.23
