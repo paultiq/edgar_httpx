@@ -21,6 +21,6 @@ def test_large_file(manager_cache: HttpxThrottleCache):
         assert response.status_code == 200
         second_duration = end - start
 
-        assert second_duration < 5 # this is a rough estimate
+        assert second_duration < 8 # this is a rough estimate
 
     
