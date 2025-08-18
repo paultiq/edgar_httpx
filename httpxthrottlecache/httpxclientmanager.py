@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, AsyncGenerator, Callable, Generator, Iterable, Literal, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Literal, Mapping, Optional, Sequence, Union
 
 import hishel
 import httpx
@@ -25,8 +25,11 @@ try:
     # enable http2 if h2 is installed
     import h2  # type: ignore  # noqa
 
+    logger.debug("HTTP2 available")
+
     HTTP2 = True  # pragma: no cover
 except ImportError:
+    logger.debug("HTTP2 not available")
     HTTP2 = False
 
 
@@ -113,27 +116,59 @@ class HttpxThrottleCache:
             params["headers"]["User-Agent"] = user_agent
         return params
 
-    def get_batch(self, urls: Iterable[str], _client_mocker=None):
-        """Convenience function to execute a batch of URLs from a sync context
+    def get_batch(self, *, urls: Sequence[str] | Mapping[str, Path], _client_mocker=None):
+        """
+        Fetch a batch of URLs concurrently and either return their content in-memory
+        or stream them directly to files.
 
-        Current implementation uses a separate thread with an asyncio loop
+        Uses background thread with an asyncio event loop.
+
+        Args:
+            urls (Sequence[str] | Mapping[str, Path]):
+
+        Returns:
+            list:
+                - If given mappings, then returns a list of Paths. Else, a list of the Content
+
+        Raises:
+            RuntimeError: If any URL responds with a status code other than 200 or 304.
         """
 
-        async def _run():
-            async def get_status_content(client, u):
-                r = await client.get(u)
-                if r.status_code in (200, 304):
-                    return r.status_code, r.content
-                else:
-                    return r.status_code, None
+        import aiofiles
 
+        async def _run():
             async with self.async_http_client() as client:
                 if _client_mocker:
+                    # For testing
                     _client_mocker(client)
-                return await asyncio.gather(*(get_status_content(client, u) for u in urls))
+
+                async def task(url: str, path: Optional[Path]):
+                    async with client.stream("GET", url) as r:
+                        if r.status_code in (200, 304):
+                            if path:
+                                path.parent.mkdir(parents=True, exist_ok=True)
+                                async with aiofiles.open(path, "wb") as f:
+                                    async for chunk in r.aiter_bytes():
+                                        await f.write(chunk)
+                                return path
+                            else:
+                                return await r.aread()
+                        else:
+                            raise RuntimeError(f"URL status code is not 200 or 304: {url=}")
+
+                if isinstance(urls, Mapping):
+                    return await asyncio.gather(*(task(u, p) for u, p in urls.items()))
+                else:
+                    return await asyncio.gather(*(task(u, None) for u in urls))
 
         with ThreadPoolExecutor(1) as pool:
             return pool.submit(lambda: asyncio.run(_run())).result()
+
+    def get_httpx_transport_params(self, params: dict[str, Any]):
+        http2 = params.get("http2", False)
+        proxy = self.proxy
+
+        return {"http2": http2, "proxy": proxy}
 
     @contextmanager
     def http_client(self, bypass_cache: bool = False, **kwargs) -> Generator[httpx.Client, None, None]:
@@ -143,13 +178,15 @@ class HttpxThrottleCache:
                 # Locking: not super critical, since worst case might be extra httpx clients created,
                 # but future proofing against TOCTOU races in free-threading world
                 if self._client is None:
-                    logger.info("Creating new HTTPX Client")
+                    logger.debug("Creating new HTTPX Client")
                     params = self.httpx_params.copy()
 
                     self.populate_user_agent(params)
-                    params.update(**kwargs)
-                    params["transport"] = self.get_transport(bypass_cache=bypass_cache)
 
+                    params.update(**kwargs)
+                    params["transport"] = self.get_transport(
+                        bypass_cache=bypass_cache, httpx_transport_params=self.get_httpx_transport_params(params)
+                    )
                     self._client = httpx.Client(**params)
 
         yield self._client
@@ -168,7 +205,9 @@ class HttpxThrottleCache:
         params = self.httpx_params.copy()
         params.update(**kwargs)
         self.populate_user_agent(params)
-        params["transport"] = self.get_async_transport(bypass_cache=bypass_cache)
+        params["transport"] = self.get_async_transport(
+            bypass_cache=bypass_cache, httpx_transport_params=self.get_httpx_transport_params(params)
+        )
 
         return httpx.AsyncClient(**params)
 
@@ -189,7 +228,7 @@ class HttpxThrottleCache:
         async with self.client_factory_async(bypass_cache=bypass_cache, **kwargs) as client:
             yield client
 
-    def get_transport(self, bypass_cache: bool) -> httpx.BaseTransport:
+    def get_transport(self, bypass_cache: bool, httpx_transport_params: dict[str, Any]) -> httpx.BaseTransport:
         """
         Constructs the Transport Chain:
 
@@ -197,9 +236,9 @@ class HttpxThrottleCache:
         """
         if self.rate_limiter_enabled:
             assert self.rate_limiter is not None
-            next_transport = RateLimitingTransport(self.rate_limiter, proxy=self.proxy)
+            next_transport = RateLimitingTransport(self.rate_limiter, **httpx_transport_params)
         else:
-            next_transport = httpx.HTTPTransport(proxy=self.proxy)
+            next_transport = httpx.HTTPTransport(**httpx_transport_params)
 
         if bypass_cache or self.cache_mode == "Disabled" or self.cache_mode is False:
             logger.info("Cache is DISABLED, rate limiting only")
@@ -224,7 +263,9 @@ class HttpxThrottleCache:
 
             return hishel.CacheTransport(transport=next_transport, storage=storage, controller=controller)
 
-    def get_async_transport(self, bypass_cache: bool) -> httpx.AsyncBaseTransport:
+    def get_async_transport(
+        self, bypass_cache: bool, httpx_transport_params: dict[str, Any]
+    ) -> httpx.AsyncBaseTransport:
         """
         Constructs the Transport Chain:
 
@@ -233,9 +274,9 @@ class HttpxThrottleCache:
 
         if self.rate_limiter_enabled:
             assert self.rate_limiter is not None
-            next_transport = AsyncRateLimitingTransport(self.rate_limiter, proxy=self.proxy)
+            next_transport = AsyncRateLimitingTransport(self.rate_limiter, **httpx_transport_params)
         else:
-            next_transport = httpx.AsyncHTTPTransport(proxy=self.proxy)
+            next_transport = httpx.AsyncHTTPTransport(**httpx_transport_params)
 
         if bypass_cache or self.cache_mode == "Disabled" or self.cache_mode is False:
             logger.info("Cache is DISABLED, rate limiting only")

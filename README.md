@@ -58,7 +58,7 @@ with HttpxThrottleCache(cache_mode="Hishel-File",
         print(response.status_code)
 ```
 
-## Usage: Synchronous Batch
+## Usage: Batch Requests
 ```py
 from httpxthrottlecache import HttpxThrottleCache
 
@@ -74,6 +74,17 @@ with HttpxThrottleCache(cache_mode="Hishel-File",
 responses = manager.get_batch([url,url])
 print([r[0] for r in responses])
 ```
+
+## Usage: Retrieve many files and write to files
+```py
+from pathlib import Path
+from httpxthrottlecache import HttpxThrottleCache
+
+with HttpxThrottleCache(cache_mode="Disabled") as mgr:
+    urls = {f"https://httpbingo.org/get?{i}": Path(f"file{i}") for i in range(10)}
+    results = mgr.get_batch(urls=urls)
+```
+
 
 ## Usage: Asynchronous
 
