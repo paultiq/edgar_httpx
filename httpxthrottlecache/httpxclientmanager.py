@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
@@ -9,6 +10,7 @@ from typing import Any, AsyncGenerator, Callable, Generator, Iterable, Literal, 
 
 import hishel
 import httpx
+from httpx._types import ProxyTypes
 from pyrate_limiter import Duration, Limiter
 
 from .controller import get_cache_controller
@@ -62,6 +64,8 @@ class HttpxThrottleCache:
 
     lock = threading.Lock()
 
+    proxy: Optional[ProxyTypes] = None
+
     def __post_init__(self):
         self.cache_dir = Path(self.cache_dir) if isinstance(self.cache_dir, str) else self.cache_dir
         # self.lock = threading.Lock()
@@ -85,6 +89,16 @@ class HttpxThrottleCache:
             else:
                 if not self.cache_dir.exists():
                     self.cache_dir.mkdir()
+
+        logger.debug(
+            "Initialized cache with cache_mode=%s, cache_dir=%s, rate_limiter_enabled=%s",
+            self.cache_mode,
+            self.cache_dir,
+            self.rate_limiter_enabled,
+        )
+
+        if os.environ.get("HTTPS_PROXY") is not None:
+            self.proxy = os.environ.get("HTTPS_PROXY")
 
     def populate_user_agent(self, params: dict):
         if self.user_agent_factory is not None:
@@ -183,9 +197,9 @@ class HttpxThrottleCache:
         """
         if self.rate_limiter_enabled:
             assert self.rate_limiter is not None
-            next_transport = RateLimitingTransport(self.rate_limiter)
+            next_transport = RateLimitingTransport(self.rate_limiter, proxy=self.proxy)
         else:
-            next_transport = httpx.HTTPTransport()
+            next_transport = httpx.HTTPTransport(proxy=self.proxy)
 
         if bypass_cache or self.cache_mode == "Disabled" or self.cache_mode is False:
             logger.info("Cache is DISABLED, rate limiting only")
@@ -216,11 +230,12 @@ class HttpxThrottleCache:
 
         Caching Transport (if enabled) => Rate Limiting Transport (if enabled) => httpx.HTTPTransport
         """
+
         if self.rate_limiter_enabled:
             assert self.rate_limiter is not None
-            next_transport = AsyncRateLimitingTransport(self.rate_limiter)
+            next_transport = AsyncRateLimitingTransport(self.rate_limiter, proxy=self.proxy)
         else:
-            next_transport = httpx.AsyncHTTPTransport()
+            next_transport = httpx.AsyncHTTPTransport(proxy=self.proxy)
 
         if bypass_cache or self.cache_mode == "Disabled" or self.cache_mode is False:
             logger.info("Cache is DISABLED, rate limiting only")

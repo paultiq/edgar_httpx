@@ -56,13 +56,22 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
         run: |
-          uv run pytest --verbose --cov --cov-report=term-missing --ignore=tests/test_edgartools.py
+          uv run pytest --verbose --cov --cov-report=term-missing --ignore=tests/extras
           uv build
       - name: Smoke Test Edgar Tools
         if: ${{ matrix.python-version == env.LATEST_PY_VERSION && matrix.os == 'ubuntu-latest' }}
         run: |
           uv pip install edgartools
-          uv run pytest tests/test_edgartools.py
+          uv run pytest tests/extras/test_edgartools.py
+      - name: Test Proxy
+        if: ${{ matrix.python-version == env.LATEST_PY_VERSION && matrix.os == 'ubuntu-latest' }}
+        run: |
+          docker run -d --name tinyproxy -p 6666:8888 -e ALLOW=0.0.0.0/0 monokal/tinyproxy:latest ANY
+          export HTTP_PROXY=http://127.0.0.1:6666
+          export HTTPS_PROXY=http://127.0.0.1:6666
+          curl -s -o /dev/null -w "%{http_code}\n" http://httpbingo.org/get  | grep -q '^200$'
+          curl -s -o /dev/null -w "%{http_code}\n" https://httpbingo.org/get | grep -q '^200$'
+          uv run pytest tests/extras/test_proxy.py
       - name: Python Coverage Comment if main
         if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == env.LATEST_PY_VERSION && matrix.os == 'ubuntu-latest' }}
         uses: py-cov-action/python-coverage-comment-action@v3.23
