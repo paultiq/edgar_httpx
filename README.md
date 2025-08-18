@@ -7,12 +7,12 @@
 | httpxthrottlecache/\_\_init\_\_.py        |        4 |        0 |    100% |           |
 | httpxthrottlecache/\_version.py           |        3 |        0 |    100% |           |
 | httpxthrottlecache/controller.py          |       54 |        0 |    100% |           |
-| httpxthrottlecache/filecache/transport.py |      219 |        6 |     97% |     53-58 |
+| httpxthrottlecache/filecache/transport.py |      219 |       15 |     93% |37-38, 41-46, 53-58, 282 |
 | httpxthrottlecache/httpxclientmanager.py  |      150 |        1 |     99% |       114 |
 | httpxthrottlecache/key\_generator.py      |       10 |        0 |    100% |           |
 | httpxthrottlecache/ratelimiter.py         |       31 |        0 |    100% |           |
 | httpxthrottlecache/serializer.py          |       27 |        0 |    100% |           |
-|                                 **TOTAL** |  **498** |    **7** | **99%** |           |
+|                                 **TOTAL** |  **498** |   **16** | **97%** |           |
 
 
 ## Setup coverage badge
