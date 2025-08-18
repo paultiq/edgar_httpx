@@ -88,7 +88,7 @@ class FileCache:
 
     def get_if_fresh(
         self, host: str, path: str, query: str, cache_rules: dict[str, dict[str, Union[bool, int]]]
-    ) -> tuple[bool, Path | None]:
+    ) -> tuple[bool, Optional[Path]]:
         cached = get_rule_for_request(request_host=host, target=path, cache_rules=cache_rules)
 
         if not cached:
