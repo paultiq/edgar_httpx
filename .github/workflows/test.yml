@@ -26,9 +26,9 @@ jobs:
         include:
         # test oldest & latest versions against ubuntu
         # and one version against windows and macos
-        - { os: ubuntu-latest, python-version: "3.10" }
+        - { os: ubuntu-latest, python-version: "3.9" }
         - { os: ubuntu-latest, python-version: *latest }
-#- { os: ubuntu-latest, python-version: "3.14t" }
+        - { os: ubuntu-latest, python-version: "3.14t" }
         - { os: ubuntu-latest, python-version: "pypy3.11" }
         - { os: windows-latest, python-version: *latest }
         - { os: macos-latest, python-version: *latest }
@@ -57,6 +57,11 @@ jobs:
         run: |
           uv run pytest --verbose --cov --cov-report=term-missing
           uv build
+      - name: Smoke Test Edgar Tools
+        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == env.LATEST_PY_VERSION && matrix.os == 'ubuntu-latest' }}
+        run: |
+          uv pip install edgartools
+          uv run pytest smoketest_edgar
       - name: Python Coverage Comment if main
         if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == env.LATEST_PY_VERSION && matrix.os == 'ubuntu-latest' }}
         uses: py-cov-action/python-coverage-comment-action@v3.23
