@@ -18,7 +18,7 @@ env:
   EDGAR_IDENTITY: "Iq De de_iq@iqmo.com"
 
 jobs:
-  build-and-upload:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
