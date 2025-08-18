@@ -14,13 +14,16 @@ logging.basicConfig(
 
 @pytest.fixture(params=["Hishel-File", "FileCache"], ids=["hishel", "filecache"])
 def manager_cache(tmp_path_factory, request):
-    user_agent = os.environ["EDGAR_IDENTITY"]
+    user_agent = os.environ.get("EDGAR_IDENTITY", None)
     cache_dir = tmp_path_factory.mktemp("cache")
+
+    logger.debug("Test cache_dir=%s", cache_dir)
     return HttpxThrottleCache(user_agent=user_agent, cache_dir=cache_dir, cache_mode=request.param, cache_rules=EDGAR_CACHE_RULES)
 
 @pytest.fixture
 def manager_nocache():
-    user_agent = os.environ["EDGAR_IDENTITY"]
+    user_agent = os.environ.get("EDGAR_IDENTITY", None)
+    logger.debug("Non-caching manager")
     mgr = HttpxThrottleCache(user_agent=user_agent, cache_mode="Disabled", cache_dir=None)
     return mgr
 
