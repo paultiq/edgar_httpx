@@ -5,7 +5,7 @@ dynamic = ["version"]
 description = "Rate Limiting and Caching HTTPX Client"
 authors = [{name = "Paul T", email = "paul@iqmo.com"}]
 readme = "README.md"
-requires-python = ">=3.09"
+requires-python = ">=3.10"
 keywords = [
   "edgar",
   "sec",
@@ -20,7 +20,6 @@ dependencies = [
   "pyrate-limiter>=3.9.0",
 ]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -219,7 +218,7 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-retries = 2
-retry_delay = 4
+retries = 1
+#retry_delay = 4
 cumulative_timing = false
-retry_outcome = "rerun"
+#retry_outcome = "rerun"
