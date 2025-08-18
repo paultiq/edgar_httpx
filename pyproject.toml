@@ -30,7 +30,7 @@ classifiers = [
 
 [dependency-groups]
 dev = [
-  "edgartools>=4.6.3",
+  "edgartools>=4.6.3; platform_python_implementation != 'PyPy'",
   "hishel[s3]>=0.1.3",
   "pre-commit-uv>=4.1.4",
   "pylint>=3.3.8",
