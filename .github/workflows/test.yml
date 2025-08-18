@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LATEST_PY_VERSION: &latest '3.14'
+  LATEST_PY_VERSION: &latest '3.13'
   EDGAR_IDENTITY: "Iq De de_iq@iqmo.com"
 
 jobs:
@@ -27,11 +27,11 @@ jobs:
         # test oldest & latest versions against ubuntu
         # and one version against windows and macos
         - { os: ubuntu-latest, python-version: "3.10" }
-        - { os: ubuntu-latest, python-version: "3.14" }
-        - { os: ubuntu-latest, python-version: "3.14t" }
+        - { os: ubuntu-latest, python-version: *latest }
+#- { os: ubuntu-latest, python-version: "3.14t" }
         - { os: ubuntu-latest, python-version: "pypy3.11" }
-        - { os: windows-latest, python-version: "3.14" }
-        - { os: macos-latest, python-version: "3.14" }
+        - { os: windows-latest, python-version: *latest }
+        - { os: macos-latest, python-version: *latest }
     environment: test
     permissions:
       contents: write
