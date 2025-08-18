@@ -3,10 +3,18 @@ name: Test and Coverage
 on:
   push:
     branches:
-      - "*"
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  # cancels superceded runs
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  LATEST_PY_VERSION: '3.13'
+  LATEST_PY_VERSION: &latest '3.13'
   EDGAR_IDENTITY: "Iq De de_iq@iqmo.com"
 
 jobs:
