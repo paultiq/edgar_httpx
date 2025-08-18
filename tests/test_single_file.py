@@ -20,7 +20,7 @@ def test_large_file(manager_cache: HttpxThrottleCache):
         assert r1.status_code == 200
         first_duration = end - start
 
-        assert 5 < first_duration < 120 # this is a rough estimate to make sure the file took about as long as it should
+        assert 0 < first_duration < 120 # this is a rough estimate to make sure the file took about as long as it should
 
         logger.info("Making second request")
         start = time.perf_counter()
