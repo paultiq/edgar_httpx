@@ -5,7 +5,7 @@ dynamic = ["version"]
 description = "Rate Limiting and Caching HTTPX Client"
 authors = [{name = "Paul T", email = "paul@iqmo.com"}]
 readme = "README.md"
-requires-python = ">=3.09"
+requires-python = ">=3.10"
 keywords = [
   "edgar",
   "sec",
@@ -20,7 +20,6 @@ dependencies = [
   "pyrate-limiter>=3.9.0",
 ]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -40,12 +39,14 @@ gha = [
 ]
 
 dev = [
+  "edgartools>=4.6.3",
   "hishel[s3]>=0.1.3",
-  "pre-commit>=4.2.0",
+  "pre-commit-uv>=4.1.4",
   "pylint>=3.3.8",
   "pytest>=8.4.1",
   "pytest-asyncio>=1.1.0",
   "pytest-cov>=6.2.1",
+  "pytest-randomly>=3.16.0",
   "pytest-xdist>=3.8.0",
   "ruff>=0.12.8",
   "tqdm>=4.67.1",
@@ -217,8 +218,7 @@ ignore = [
 
 [build-system]
 requires = ["hatchling",   
-  "uv-dynamic-versioning; python_version != '3.14'",
-  "uv-dynamic-versioning @ git+https://github.com/paultiq/uv-dynamic-versioning.git; python_version == '3.14'",
+  "uv-dynamic-versioning"
 ]
 build-backend = "hatchling.build"
 
