@@ -22,8 +22,8 @@ jobs:
     name: "🧪 Test ${{ matrix.py }} - ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
-        fail-fast: true
         python-version: ["3.10", "3.14", "3.14t", "pypy3.11"]
         os: ["windows-latest", "macos-latest", "ubuntu-latest"]
         exclude:
