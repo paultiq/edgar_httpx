@@ -9,13 +9,12 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Callable, Iterator, Optional, Tuple, Union
 from urllib.parse import quote, unquote
 
 import aiofiles
 import httpx
 from filelock import AsyncFileLock, FileLock
-from httpx._types import SyncByteStream  # protocol type
 
 from ..controller import get_rule_for_request
 
@@ -26,13 +25,13 @@ class AlreadyLockedError(Exception):
     pass
 
 
-class DualFileStream(httpx._types.SyncByteStream, httpx.AsyncByteStream):
+class DualFileStream(httpx.SyncByteStream, httpx.AsyncByteStream):
     def __init__(
         self,
         path: Path,
         chunk_size: int = 1024 * 1024,
-        on_close: Optional[callable] = None,
-        async_on_close: Optional[callable] = None,
+        on_close: Optional[Callable[[], None]] = None,
+        async_on_close: Optional[Callable[[], None]] = None,
     ):
         self.path, self.chunk_size = Path(path), chunk_size
         self.on_close, self.async_on_close = on_close, async_on_close
@@ -72,7 +71,7 @@ class FileCache:
     def _meta_path(self, p: Path) -> Path:
         return p.with_suffix(p.suffix + ".meta")
 
-    def _load_meta(self, p: Path) -> dict:
+    def _load_meta(self, p: Path) -> dict[str, str]:
         try:
             return json.loads(self._meta_path(p).read_text())
         except FileNotFoundError:  # pragma: no cover
@@ -109,7 +108,7 @@ class FileCache:
             logger.info("Cache policy allows unlimited cache, returning %s", p)
             return True, p
 
-        age = round(time.time() - fetched)
+        age: int = round(time.time() - float(fetched))
         if age < 0:  # pragma: no cover
             raise ValueError(f"Age is less than 0, impossible {age=}, file {path=}")
         logger.info("file is %s seconds old, policy allows caching for up to %s", age, cached)
@@ -166,7 +165,7 @@ class _TeeCore:
                 self.lock.release()
 
 
-class _TeeToDisk(SyncByteStream):
+class _TeeToDisk(httpx.SyncByteStream):
     def __init__(self, resp: httpx.Response, path: Path, locking: bool, last_modified: str, access_date: str) -> None:
         self.core = _TeeCore(resp, path, locking, last_modified, access_date)
 
@@ -188,7 +187,7 @@ class _TeeToDisk(SyncByteStream):
 
 
 class _AsyncTeeToDisk(httpx.AsyncByteStream):
-    def __init__(self, resp, path, locking, last_modified, access_date):
+    def __init__(self, resp: httpx.Response, path: Path, locking: bool, last_modified: str, access_date: str):
         self.resp = resp
         self.path = path
         self.tmp = path.with_name(path.name + ".tmp")
@@ -234,6 +233,8 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
     cache_rules: dict[str, dict[str, Union[bool, int]]]
     streaming_cutoff: int = 8 * 1024 * 1024
 
+    transport: httpx.HTTPTransport
+    _cache: FileCache 
     def __init__(
         self,
         cache_dir: Union[str, Path],
@@ -244,7 +245,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         self.transport = transport or httpx.HTTPTransport()
         self.cache_rules = cache_rules
 
-    def _cache_hit_response(self, req, path: Path, status_code: int = 200):
+    def _cache_hit_response(self, req: httpx.Request, path: Path, status_code: int = 200):
         """
         TODO: More carefully consider async here. read_text, read_bytes both are blocking.
 
@@ -286,7 +287,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
                 request=req,
             )
 
-    def _cache_miss_response(self, req, net, path, tee_factory):
+    def _cache_miss_response(self, req: httpx.Request, net: httpx.Response, path: Path, tee_factory):
         if net.status_code != 200:
             return net
 
@@ -306,7 +307,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
             extensions={**net.extensions, "decode_content": False},
         )
 
-    def return_if_fresh(self, request):
+    def return_if_fresh(self, request: httpx.Request) -> Tuple[Optional[httpx.Response], Optional[Path]]:
         host = request.url.host
         path = request.url.path
         query = request.url.query.decode() if request.url.query else ""
@@ -321,6 +322,8 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
                 if lm:
                     request.headers["If-Modified-Since"] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(lm))
                     return None, path
+                else:
+                    return None, None
         else:
             return None, None
 
@@ -353,7 +356,7 @@ class CachingTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
         if response:
             return response
 
-        net = await self.transport.handle_async_request(request)
+        net: httpx.Response = await self.transport.handle_async_request(request)
         if net.status_code == 304:
             assert path is not None  # must be true
             logger.info("304 for %s", request)

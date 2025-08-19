@@ -3,6 +3,7 @@ To control rate limit across multiple processes, see https://pyratelimiter.readt
 """
 
 import logging
+from typing import Any
 
 import httpx
 from pyrate_limiter import Duration, InMemoryBucket, Limiter, Rate
@@ -10,7 +11,7 @@ from pyrate_limiter import Duration, InMemoryBucket, Limiter, Rate
 logger = logging.getLogger(__name__)
 
 
-def create_rate_limiter(requests_per_second: int, max_delay=Duration.DAY) -> Limiter:
+def create_rate_limiter(requests_per_second: int, max_delay: Duration | int = Duration.DAY) -> Limiter:
     rate = Rate(requests_per_second, Duration.SECOND)
     rate_limits = [rate]
 
@@ -24,11 +25,11 @@ def create_rate_limiter(requests_per_second: int, max_delay=Duration.DAY) -> Lim
 
 
 class RateLimitingTransport(httpx.HTTPTransport):
-    def __init__(self, limiter: Limiter, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, limiter: Limiter, **kwargs: dict[str, Any]):
+        super().__init__(**kwargs)  # pyright: ignore[reportArgumentType]
         self.limiter = limiter
 
-    def handle_request(self, request: httpx.Request, **kwargs) -> httpx.Response:
+    def handle_request(self, request: httpx.Request, **kwargs: dict[str, Any]) -> httpx.Response:
         # using a constant string for item name means that the same
         # rate is applied to all requests.
         if self.limiter:
@@ -42,11 +43,11 @@ class RateLimitingTransport(httpx.HTTPTransport):
 
 
 class AsyncRateLimitingTransport(httpx.AsyncHTTPTransport):
-    def __init__(self, limiter: Limiter, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, limiter: Limiter, **kwargs: dict[str, Any]):
+        super().__init__(**kwargs)  # pyright: ignore[reportArgumentType]
         self.limiter = limiter
 
-    async def handle_async_request(self, request: httpx.Request, **kwargs) -> httpx.Response:
+    async def handle_async_request(self, request: httpx.Request, **kwargs: dict[str, Any]) -> httpx.Response:
         if self.limiter:
             while not await self.limiter.try_acquire_async(__name__):
                 logger.debug("Lock acquisition timed out, retrying")  # pragma: no cover
