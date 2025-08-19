@@ -116,6 +116,10 @@ class HttpxThrottleCache:
             params["headers"]["User-Agent"] = user_agent
         return params
 
+    def populate_user_agent(self, params: dict):
+        """Provided so clients can inspect the params that would be passed to HTTPX"""
+        return self._populate_user_agent(params)
+
     def get_batch(self, *, urls: Sequence[str] | Mapping[str, Path], _client_mocker=None):
         """
         Fetch a batch of URLs concurrently and either return their content in-memory
