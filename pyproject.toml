@@ -176,7 +176,7 @@ enable = [
 ]
 
 [tool.pyright]
-typeCheckingMode = "basic"
+typeCheckingMode = "strict"
 reportGeneralTypeIssues = false
 reportPrivateImportUsage = false
 reportAttributeAccessIssue = false

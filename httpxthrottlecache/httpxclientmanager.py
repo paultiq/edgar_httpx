@@ -1,4 +1,5 @@
 import asyncio
+import importlib.util
 import logging
 import os
 import threading
@@ -21,16 +22,7 @@ from .serializer import JSONByteSerializer
 
 logger = logging.getLogger(__name__)
 
-try:
-    # enable http2 if h2 is installed
-    import h2  # type: ignore  # noqa
-
-    logger.debug("HTTP2 available")
-
-    HTTP2 = True  # pragma: no cover
-except ImportError:
-    logger.debug("HTTP2 not available")
-    HTTP2 = False
+HTTP2 = importlib.util.find_spec("h2") is not None
 
 
 @dataclass
@@ -61,7 +53,7 @@ class HttpxThrottleCache:
     s3_bucket: Optional[str] = None
     s3_client: Optional[Any] = None
     user_agent: Optional[str] = None
-    user_agent_factory: Optional[Callable] = None
+    user_agent_factory: Optional[Callable[[], str]] = None
 
     cache_dir: Optional[Union[Path, str]] = None
 
@@ -103,7 +95,7 @@ class HttpxThrottleCache:
         if os.environ.get("HTTPS_PROXY") is not None:
             self.proxy = os.environ.get("HTTPS_PROXY")
 
-    def _populate_user_agent(self, params: dict):
+    def _populate_user_agent(self, params: dict[str, Any]):
         if self.user_agent_factory is not None:
             user_agent = self.user_agent_factory()
         else:
@@ -116,11 +108,16 @@ class HttpxThrottleCache:
             params["headers"]["User-Agent"] = user_agent
         return params
 
-    def populate_user_agent(self, params: dict):
+    def populate_user_agent(self, params: dict[str, Any]):
         """Provided so clients can inspect the params that would be passed to HTTPX"""
         return self._populate_user_agent(params)
 
-    def get_batch(self, *, urls: Sequence[str] | Mapping[str, Path], _client_mocker=None):
+    def get_batch(
+        self,
+        *,
+        urls: Sequence[str] | Mapping[str, Path],
+        _client_mocker: Optional[Callable[[httpx.AsyncClient], httpx.AsyncClient]] = None,
+    ):
         """
         Fetch a batch of URLs concurrently and either return their content in-memory
         or stream them directly to files.
@@ -140,13 +137,13 @@ class HttpxThrottleCache:
 
         import aiofiles
 
-        async def _run():
+        async def _run() -> Sequence[Path | bytes]:
             async with self.async_http_client() as client:
                 if _client_mocker:
                     # For testing
                     _client_mocker(client)
 
-                async def task(url: str, path: Optional[Path]):
+                async def task(url: str, path: Optional[Path]) -> Path | bytes:
                     async with client.stream("GET", url) as r:
                         if r.status_code in (200, 304):
                             if path:
@@ -175,7 +172,7 @@ class HttpxThrottleCache:
         return {"http2": http2, "proxy": proxy}
 
     @contextmanager
-    def http_client(self, bypass_cache: bool = False, **kwargs) -> Generator[httpx.Client, None, None]:
+    def http_client(self, bypass_cache: bool = False, **kwargs: dict[str, Any]) -> Generator[httpx.Client, None, None]:
         """Provides and reuses a client. Does not close"""
         if self._client is None:
             with self.lock:
@@ -205,7 +202,7 @@ class HttpxThrottleCache:
 
         self.close()
 
-    def _client_factory_async(self, bypass_cache: bool, **kwargs) -> httpx.AsyncClient:
+    def _client_factory_async(self, bypass_cache: bool, **kwargs: dict[str, Any]) -> httpx.AsyncClient:
         params = self.httpx_params.copy()
         params.update(**kwargs)
         self._populate_user_agent(params)
@@ -217,7 +214,7 @@ class HttpxThrottleCache:
 
     @asynccontextmanager
     async def async_http_client(
-        self, client: Optional[httpx.AsyncClient] = None, bypass_cache: bool = False, **kwargs
+        self, client: Optional[httpx.AsyncClient] = None, bypass_cache: bool = False, **kwargs: dict[str, Any]
     ) -> AsyncGenerator[httpx.AsyncClient, None]:
         """
         Async callers should create a single client for a group of tasks, rather than creating a single client per task.
@@ -308,5 +305,5 @@ class HttpxThrottleCache:
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type: Any, value: Any, traceback: Any):
         self.close()

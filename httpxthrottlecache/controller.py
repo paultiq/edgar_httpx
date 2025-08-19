@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import hishel
 import httpcore
@@ -20,7 +20,7 @@ def get_rules(
     logger.debug("No patterns matched %s", request_host)
 
 
-def match_request(target, cache_rules_for_site: dict[str, Union[bool, int]]):
+def match_request(target: str, cache_rules_for_site: dict[str, Union[bool, int]]):
     for pat, v in cache_rules_for_site.items():
         if re.match(pat, target):
             logger.info("%s matched %s, using value %s", target, pat, v)
@@ -40,7 +40,11 @@ def get_rule_for_request(
     return None
 
 
-def get_cache_controller(key_generator, cache_rules: dict[str, dict[str, Union[bool, int]]], **kwargs):
+def get_cache_controller(
+    key_generator: Callable[[httpcore.Request, Optional[bytes]], str],
+    cache_rules: dict[str, dict[str, Union[bool, int]]],
+    **kwargs: dict[str, Any],
+):
     class EdgarController(hishel.Controller):
         def is_cachable(self, request: httpcore.Request, response: httpcore.Response) -> bool:
             if response.status not in self._cacheable_status_codes:
@@ -83,7 +87,7 @@ def get_cache_controller(key_generator, cache_rules: dict[str, dict[str, Union[b
             elif cache_period:  # int
                 max_age = cache_period
 
-                age_seconds = hishel._controller.get_age(response, self._clock)
+                age_seconds = hishel._controller.get_age(response, self._clock)  # pyright: ignore[reportPrivateUsage]
 
                 if age_seconds > max_age:
                     logger.debug(

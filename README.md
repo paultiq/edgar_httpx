@@ -36,6 +36,8 @@ Cache Rules are defined as a dictionary of site regular expressions to path regu
 }
 ```
 
+## Misc Settings:
+- HTTPS_PROXY: HTTPS_PROXY environment variable is propagated to the HTTPX Transport
 
 ## Usage: Synchronous Requests
 
